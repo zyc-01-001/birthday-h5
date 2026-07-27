@@ -505,32 +505,42 @@ body::before{
   color:rgba(255,215,0,0.3);font-size:20px;animation:blink 1.2s ease infinite;
 }
 .polaroid-fail::before{content:'🍁';}
-/* 照片长按翻转彩蛋 */
-.polaroid.flipped{
-  z-index:30;
-  transform:translateX(-50%) rotateY(180deg) scale(1.3) !important;
+/* 照片双击翻转彩蛋 */
+.polaroid{
+  transform-style:preserve-3d;
+}
+.polaroid-img-wrap{
+  position:relative;
+  transform-style:preserve-3d;
   transition:transform .6s cubic-bezier(0.34,1.56,0.64,1);
 }
+.polaroid.flipped .polaroid-img-wrap{
+  transform:rotateY(180deg);
+}
+.polaroid.flipped{
+  z-index:30;
+  transform:translateX(-50%) rotate(0deg) scale(1.15) !important;
+}
 .polaroid-back{
-  position:absolute;inset:0;border-radius:4px;
-  background:linear-gradient(160deg,rgba(40,20,60,0.95),rgba(15,10,30,0.98));
-  border:1px solid rgba(255,215,0,0.2);
-  display:flex;align-items:center;justify-content:center;
-  padding:10px;text-align:center;
+  position:absolute;inset:0;border-radius:2px;
+  background:linear-gradient(160deg,rgba(40,20,60,0.97),rgba(15,10,30,0.98));
+  border:1px solid rgba(255,215,0,0.3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px;text-align:center;
   backface-visibility:hidden;
   transform:rotateY(180deg);
-  font-family:'Rajdhani',sans-serif;font-size:11px;
-  color:var(--lavender);line-height:1.6;
+  font-family:'Rajdhani',sans-serif;font-size:10px;
+  color:var(--lavender);line-height:1.5;
   text-shadow:0 0 8px rgba(176,102,255,0.4);
 }
 .polaroid-back .secret-mark{
-  font-size:18px;color:var(--gold);
+  font-size:16px;color:var(--gold);
   text-shadow:0 0 12px rgba(255,215,0,0.6);
   margin-bottom:4px;
 }
-.long-press-hint{
-  position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
-  font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;
+.double-tap-hint{
+  position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
+  font-size:6px;color:rgba(255,255,255,0.25);letter-spacing:1px;
   white-space:nowrap;pointer-events:none;
 }
 
@@ -2925,48 +2935,43 @@ function initLevel3() {
     el.dataset.rot = p.rot;
     el.innerHTML = `
       <div class="polaroid-pin"></div>
-      <div class="polaroid-img polaroid-skeleton">
-        <img data-src="${src}" alt="回忆 ${i + 1}" decoding="async" onerror="this.parentElement.classList.add('polaroid-fail');this.style.display='none';">
+      <div class="polaroid-img-wrap">
+        <div class="polaroid-img polaroid-skeleton">
+          <img data-src="${src}" alt="回忆 ${i + 1}" decoding="async" onerror="this.parentElement.classList.add('polaroid-fail');this.style.display='none';">
+        </div>
+        <div class="polaroid-back">
+          <div class="secret-mark">${secret.mark}</div>
+          <div>${secret.msg}</div>
+        </div>
       </div>
-      <div class="polaroid-back">
-        <div class="secret-mark">${secret.mark}</div>
-        <div>${secret.msg}</div>
-      </div>
-      <div class="long-press-hint">长按揭秘</div>
+      <div class="double-tap-hint">双击揭秘</div>
     `;
-    // 点击放大置顶
-    el.addEventListener('click', () => {
-      if (el.classList.contains('flipped')) {
-        el.classList.remove('flipped');
+    // 双击翻转彩蛋
+    el.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      el.classList.toggle('flipped');
+      playTone(1200, 0.3, 'sine', 0.2);
+      playTone(1500, 0.4, 'sine', 0.15, 0.15);
+    });
+    // 移动端双击（300ms内两次tap）
+    let lastTap = 0;
+    el.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTap < 350) {
+        e.preventDefault();
+        el.classList.toggle('flipped');
+        playTone(1200, 0.3, 'sine', 0.2);
+        playTone(1500, 0.4, 'sine', 0.15, 0.15);
+        lastTap = 0;
+      } else {
+        lastTap = now;
+        // 单击放大置顶
+        document.querySelectorAll('.polaroid').forEach(x => x.classList.remove('active', 'flipped'));
+        el.classList.add('active');
         playTone(800 + i * 60, 0.15, 'sine', 0.05);
-        return;
+        setTimeout(() => el.classList.remove('active'), 2500);
       }
-      document.querySelectorAll('.polaroid').forEach(x => x.classList.remove('active', 'flipped'));
-      el.classList.add('active');
-      playTone(800 + i * 60, 0.15, 'sine', 0.05);
-      setTimeout(() => el.classList.remove('active'), 2500);
     });
-    // 长按翻转彩蛋
-    let pressTimer = null;
-    el.addEventListener('touchstart', (e) => {
-      pressTimer = setTimeout(() => {
-        el.classList.toggle('flipped');
-        playTone(1200, 0.3, 'sine', 0.2);
-        playTone(1500, 0.4, 'sine', 0.15, 0.15);
-      }, 800);
-    }, { passive: true });
-    el.addEventListener('touchend', () => { clearTimeout(pressTimer); });
-    el.addEventListener('touchmove', () => { clearTimeout(pressTimer); });
-    // PC端长按
-    el.addEventListener('mousedown', (e) => {
-      pressTimer = setTimeout(() => {
-        el.classList.toggle('flipped');
-        playTone(1200, 0.3, 'sine', 0.2);
-        playTone(1500, 0.4, 'sine', 0.15, 0.15);
-      }, 800);
-    });
-    el.addEventListener('mouseup', () => { clearTimeout(pressTimer); });
-    el.addEventListener('mouseleave', () => { clearTimeout(pressTimer); });
     wall.appendChild(el);
     // 入场动画
     el.style.opacity = '0';
@@ -4091,11 +4096,13 @@ function saveCertificateAsImage() {
 
   if (useHtml2Canvas) {
     html2canvas(card, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       backgroundColor: null,
       logging: false,
       allowTaint: true,
+      imageTimeout: 0,
+      removeContainer: true,
       // 确保捕获伪元素和渐变
       onclone: function(clonedDoc) {
         const clonedCard = clonedDoc.getElementById('certCard');
@@ -4108,16 +4115,29 @@ function saveCertificateAsImage() {
             holoBorder.style.animation = 'none';
             holoBorder.style.transform = 'rotate(45deg)';
           }
-          // 强制伪元素可见（html2canvas 对 ::before/::after 支持有限）
+          // 关键修复：html2canvas 无法正确渲染 -webkit-background-clip:text
+          // 渐变背景会泄漏出来形成丑陋底纹，所以在克隆中用纯色替代
           const style = clonedDoc.createElement('style');
           style.textContent = `
             .cert-card::before { display: none; }
             .cert-card::after { opacity: 1; }
             .cert-holo-border::before { animation: none; opacity: 0.5; }
             .cert-holo-border::after { background: rgba(20,15,40,0.95) !important; }
-            .cert-title, .cert-name { -webkit-text-fill-color: #fff !important; color: #ffd700 !important; }
-            .cert-emblem { color: #ffd700 !important; }
-            .cert-seal { border-color: rgba(255,107,157,0.8) !important; background: radial-gradient(circle,rgba(255,107,157,0.25),transparent) !important; }
+            .cert-title {
+              -webkit-text-fill-color: #ffd700 !important;
+              background: none !important;
+              color: #ffd700 !important;
+              filter: drop-shadow(0 0 12px rgba(255,215,0,0.6));
+            }
+            .cert-name {
+              -webkit-text-fill-color: #ff6b9d !important;
+              background: none !important;
+              color: #ff6b9d !important;
+              filter: drop-shadow(0 0 12px rgba(255,107,157,0.5));
+            }
+            .cert-emblem { color: #ffd700 !important; text-shadow: 0 0 20px rgba(255,215,0,0.7),0 0 40px rgba(255,215,0,0.4) !important; }
+            .cert-seal { border-color: rgba(255,107,157,0.8) !important; background: rgba(255,107,157,0.15) !important; }
+            .cert-date, .cert-age { color: #ffd700 !important; text-shadow: 0 0 6px rgba(255,215,0,0.3) !important; }
           `;
           clonedDoc.head.appendChild(style);
         }
