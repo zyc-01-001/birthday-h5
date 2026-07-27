@@ -505,6 +505,34 @@ body::before{
   color:rgba(255,215,0,0.3);font-size:20px;animation:blink 1.2s ease infinite;
 }
 .polaroid-fail::before{content:'🍁';}
+/* 照片长按翻转彩蛋 */
+.polaroid.flipped{
+  z-index:30;
+  transform:translateX(-50%) rotateY(180deg) scale(1.3) !important;
+  transition:transform .6s cubic-bezier(0.34,1.56,0.64,1);
+}
+.polaroid-back{
+  position:absolute;inset:0;border-radius:4px;
+  background:linear-gradient(160deg,rgba(40,20,60,0.95),rgba(15,10,30,0.98));
+  border:1px solid rgba(255,215,0,0.2);
+  display:flex;align-items:center;justify-content:center;
+  padding:10px;text-align:center;
+  backface-visibility:hidden;
+  transform:rotateY(180deg);
+  font-family:'Rajdhani',sans-serif;font-size:11px;
+  color:var(--lavender);line-height:1.6;
+  text-shadow:0 0 8px rgba(176,102,255,0.4);
+}
+.polaroid-back .secret-mark{
+  font-size:18px;color:var(--gold);
+  text-shadow:0 0 12px rgba(255,215,0,0.6);
+  margin-bottom:4px;
+}
+.long-press-hint{
+  position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;
+  white-space:nowrap;pointer-events:none;
+}
 
 /* ===== 记忆星图（SVG星座连线） ===== */
 .star-map{
@@ -1464,7 +1492,7 @@ body::before{
   100%{transform:scale(1) rotateX(0);filter:blur(0) brightness(1);}
 }
 .cert-card{
-  position:relative;width:320px;max-width:90vw;
+  position:relative;width:340px;max-width:92vw;
   background:linear-gradient(160deg,rgba(40,20,60,0.95),rgba(15,10,30,0.98));
   border-radius:20px;padding:36px 28px 28px;
   box-shadow:
@@ -1616,8 +1644,9 @@ body::before{
 .cert-divider i{color:var(--gold);font-size:14px;font-style:normal;opacity:0.6;text-shadow:0 0 6px rgba(255,215,0,0.5);}
 .cert-body{text-align:center;margin-bottom:24px;position:relative;z-index:4;}
 .cert-line{
-  font-family:'Rajdhani',sans-serif;font-size:15px;
-  color:rgba(255,255,255,0.75);letter-spacing:2px;line-height:2;
+  font-family:'Rajdhani',sans-serif;font-size:14px;
+  color:rgba(255,255,255,0.75);letter-spacing:2px;line-height:1.4;
+  white-space:nowrap;
 }
 .cert-name{
   font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;
@@ -1879,7 +1908,7 @@ body::before{
 <canvas class="petal-canvas" id="petalCanvas"></canvas>
 
 <!-- 背景音乐 -->
-<audio id="bgMusic" src="assets/小幸运.mp3" loop preload="metadata" autoplay></audio>
+<audio id="bgMusic" src="assets/小幸运.mp3" loop preload="auto" autoplay></audio>
 
 <!-- Music toggle button -->
 <button class="music-btn" id="musicBtn" title="Music">♪</button>
@@ -2345,7 +2374,7 @@ function getAudioCtx() {
 }
 
 // Play a single tone
-function playTone(freq, duration, type = 'sine', volume = 0.15, startDelay = 0) {
+function playTone(freq, duration, type = 'sine', volume = 0.3, startDelay = 0) {
   const ctx = getAudioCtx();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -2361,37 +2390,37 @@ function playTone(freq, duration, type = 'sine', volume = 0.15, startDelay = 0) 
 
 // Ding sound effect
 function playDing() {
-  playTone(1200, 0.3, 'sine', 0.12);
-  playTone(1800, 0.2, 'sine', 0.06, 0.05);
+  playTone(1200, 0.3, 'sine', 0.25);
+  playTone(1800, 0.2, 'sine', 0.12, 0.05);
 }
 
 // Envelope open sound
 function playEnvelopeOpen() {
-  playTone(400, 0.15, 'triangle', 0.1);
-  playTone(600, 0.15, 'triangle', 0.1, 0.1);
-  playTone(800, 0.2, 'sine', 0.08, 0.2);
+  playTone(400, 0.15, 'triangle', 0.2);
+  playTone(600, 0.15, 'triangle', 0.2, 0.1);
+  playTone(800, 0.2, 'sine', 0.16, 0.2);
 }
 
 // Decrypt success chord (ascending)
 function playDecryptSuccess() {
-  playTone(523, 0.4, 'sine', 0.12);
-  playTone(659, 0.4, 'sine', 0.12, 0.15);
-  playTone(784, 0.4, 'sine', 0.12, 0.3);
-  playTone(1047, 0.6, 'sine', 0.15, 0.45);
+  playTone(523, 0.4, 'sine', 0.25);
+  playTone(659, 0.4, 'sine', 0.25, 0.15);
+  playTone(784, 0.4, 'sine', 0.25, 0.3);
+  playTone(1047, 0.6, 'sine', 0.3, 0.45);
 }
 
 // Confetti burst sound
 function playConfettiSound() {
   for (let i = 0; i < 8; i++) {
-    playTone(800 + Math.random() * 800, 0.15, 'sine', 0.05, i * 0.08);
+    playTone(800 + Math.random() * 800, 0.15, 'sine', 0.1, i * 0.08);
   }
 }
 
 // Level complete fanfare
 function playLevelComplete() {
-  playTone(523, 0.2, 'sine', 0.1);
-  playTone(659, 0.2, 'sine', 0.1, 0.15);
-  playTone(784, 0.35, 'sine', 0.12, 0.3);
+  playTone(523, 0.2, 'sine', 0.2);
+  playTone(659, 0.2, 'sine', 0.2, 0.15);
+  playTone(784, 0.35, 'sine', 0.25, 0.3);
 }
 
 // ============================================================
@@ -2415,7 +2444,7 @@ let melodyTimeout = null;
 function playBirthdayMelody() {
   const audio = document.getElementById('bgMusic');
   if (!audio) return;
-  audio.volume = 0.5;
+  audio.volume = 1.0;
   audio.play().catch(function(){ /* 等待用户交互后再播放 */ });
 }
 
@@ -2567,6 +2596,7 @@ function initParticles() {
       vy: (Math.random() - 0.5) * 0.3 * dpr,
       alpha: Math.random() * 0.5 + 0.1,
       color: ['#ff6b9d', '#e040fb', '#b388ff', '#ffd700'][Math.floor(Math.random() * 4)],
+      char: null, // 个性化粒子：文字字符
     });
   }
 
@@ -2580,15 +2610,40 @@ function initParticles() {
       if (p.x > canvas.width) p.x = 0;
       if (p.y < 0) p.y = canvas.height;
       if (p.y > canvas.height) p.y = 0;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
       ctx.globalAlpha = p.alpha;
-      ctx.fill();
+      if (p.char) {
+        // 个性化文字粒子
+        ctx.font = `${Math.max(10, p.r * 5)}px 'Rajdhani', sans-serif`;
+        ctx.fillStyle = p.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.char, p.x, p.y);
+      } else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
     rafId = requestAnimationFrame(animate);
   }
+
+  // 个性化粒子：将部分粒子变成愿望文字碎片
+  window.transformParticlesToWishText = function(wishText) {
+    if (!wishText) return;
+    const chars = wishText.split('');
+    let charIdx = 0;
+    for (let i = 0; i < particles.length && charIdx < chars.length; i += 2) {
+      if (particles[i]) {
+        particles[i].char = chars[charIdx];
+        particles[i].color = ['#ffd700', '#ff6b9d', '#e040fb', '#b388ff', '#00ff88'][Math.floor(Math.random() * 5)];
+        particles[i].r = (1.5 + Math.random()) * dpr;
+        particles[i].alpha = 0.6 + Math.random() * 0.3;
+        charIdx++;
+      }
+    }
+  };
   function start() { if (!running) { running = true; animate(); } }
   function stop() { if (running) { running = false; if (rafId) cancelAnimationFrame(rafId); } }
   // 页面不可见时暂停，节省手机耗电与卡顿
@@ -2785,9 +2840,15 @@ function initLevel2() {
       textEl.insertBefore(span, cursor);
       charIndex++;
 
-      // Play subtle click sound occasionally
-      if (charIndex % 5 === 0) {
-        playTone(800 + Math.random() * 400, 0.02, 'square', 0.02);
+      // 机械键盘音效
+      if (ch === '\n') {
+        playTone(300, 0.05, 'square', 0.15);
+      } else {
+        playTone(1200 + Math.random() * 600, 0.03, 'square', 0.08);
+        // 偶尔加一个回弹音
+        if (Math.random() > 0.7) {
+          playTone(600 + Math.random() * 300, 0.02, 'triangle', 0.04, 0.03);
+        }
       }
 
       const delay = ch === '\n' ? 300 : (50 + Math.random() * 40);
@@ -2814,6 +2875,23 @@ function initLevel3() {
   if (level3Initialized) return;
   level3Initialized = true;
 
+  // 确保音乐播放不被图片加载中断
+  const audio = document.getElementById('bgMusic');
+  if (audio && !audio.paused) {
+    // 记住当前播放位置，图片加载后恢复
+    const savedTime = audio.currentTime;
+    const savedPlaying = !audio.paused;
+    const resumeAfterLoad = () => {
+      if (savedPlaying && audio.paused) {
+        audio.currentTime = savedTime;
+        audio.play().catch(() => {});
+      }
+    };
+    window.addEventListener('load', resumeAfterLoad, { once: true });
+    // 兜底：3秒后也检查一次
+    setTimeout(resumeAfterLoad, 3000);
+  }
+
   const photoSrcs = [
     'assets/photo_1.jpg', 'assets/photo_2.jpg', 'assets/photo_3.jpg',
     'assets/photo_4.jpg'
@@ -2829,8 +2907,16 @@ function initLevel3() {
     { left: '62%', top: '8px',  rot: -4 },
     { left: '85%', top: '45px', rot: 7  },
   ];
+  // 隐藏祝福文字（长按翻转后显示）
+  const secretMessages = [
+    { mark: '♡', msg: '那天你笑起来的样子，我记了好久好久' },
+    { mark: '✦', msg: '你不知道的是，和你在一起的每秒都是我的高光时刻' },
+    { mark: '☆', msg: '谢谢你出现在我的故事里，成为不可替代的篇章' },
+    { mark: '❋', msg: '未来的路很长，但只要你在，就很安心' },
+  ];
   photoSrcs.forEach((src, i) => {
     const p = positions[i];
+    const secret = secretMessages[i];
     const el = document.createElement('div');
     el.className = 'polaroid';
     el.style.left = p.left;
@@ -2842,14 +2928,45 @@ function initLevel3() {
       <div class="polaroid-img polaroid-skeleton">
         <img data-src="${src}" alt="回忆 ${i + 1}" decoding="async" onerror="this.parentElement.classList.add('polaroid-fail');this.style.display='none';">
       </div>
+      <div class="polaroid-back">
+        <div class="secret-mark">${secret.mark}</div>
+        <div>${secret.msg}</div>
+      </div>
+      <div class="long-press-hint">长按揭秘</div>
     `;
     // 点击放大置顶
     el.addEventListener('click', () => {
-      document.querySelectorAll('.polaroid').forEach(x => x.classList.remove('active'));
+      if (el.classList.contains('flipped')) {
+        el.classList.remove('flipped');
+        playTone(800 + i * 60, 0.15, 'sine', 0.05);
+        return;
+      }
+      document.querySelectorAll('.polaroid').forEach(x => x.classList.remove('active', 'flipped'));
       el.classList.add('active');
       playTone(800 + i * 60, 0.15, 'sine', 0.05);
       setTimeout(() => el.classList.remove('active'), 2500);
     });
+    // 长按翻转彩蛋
+    let pressTimer = null;
+    el.addEventListener('touchstart', (e) => {
+      pressTimer = setTimeout(() => {
+        el.classList.toggle('flipped');
+        playTone(1200, 0.3, 'sine', 0.2);
+        playTone(1500, 0.4, 'sine', 0.15, 0.15);
+      }, 800);
+    }, { passive: true });
+    el.addEventListener('touchend', () => { clearTimeout(pressTimer); });
+    el.addEventListener('touchmove', () => { clearTimeout(pressTimer); });
+    // PC端长按
+    el.addEventListener('mousedown', (e) => {
+      pressTimer = setTimeout(() => {
+        el.classList.toggle('flipped');
+        playTone(1200, 0.3, 'sine', 0.2);
+        playTone(1500, 0.4, 'sine', 0.15, 0.15);
+      }, 800);
+    });
+    el.addEventListener('mouseup', () => { clearTimeout(pressTimer); });
+    el.addEventListener('mouseleave', () => { clearTimeout(pressTimer); });
     wall.appendChild(el);
     // 入场动画
     el.style.opacity = '0';
@@ -2859,33 +2976,15 @@ function initLevel3() {
     }, 200 + i * 150);
   });
 
-  // ===== 照片懒加载：进入视口才加载真实图片 =====
+  // ===== 照片立即加载 =====
   const lazyImgs = wall.querySelectorAll('img[data-src]');
-  if ('IntersectionObserver' in window) {
-    const imgObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-          img.addEventListener('load', function() {
-            img.parentElement.classList.remove('polaroid-skeleton');
-          }, { once: true });
-          imgObserver.unobserve(img);
-        }
-      });
-    }, { rootMargin: '100px' });
-    lazyImgs.forEach(function(img) { imgObserver.observe(img); });
-  } else {
-    // 降级：直接加载
-    lazyImgs.forEach(function(img) {
-      img.src = img.dataset.src;
-      img.removeAttribute('data-src');
-      img.addEventListener('load', function() {
-        img.parentElement.classList.remove('polaroid-skeleton');
-      }, { once: true });
-    });
-  }
+  lazyImgs.forEach(function(img) {
+    img.src = img.dataset.src;
+    img.removeAttribute('data-src');
+    img.addEventListener('load', function() {
+      img.parentElement.classList.remove('polaroid-skeleton');
+    }, { once: true });
+  });
 
   // ===== 记忆星图：SVG星座节点 + 连线 =====
   const svg = document.getElementById('starMapSvg');
@@ -3260,7 +3359,7 @@ function initRitual() {
       filter.type = 'highpass';
       filter.frequency.value = 2000;
       const gain = ctx.createGain();
-      gain.gain.value = 0.08;
+      gain.gain.value = 0.15;
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
@@ -3295,7 +3394,7 @@ function initRitual() {
       filter.frequency.value = 500;
       filter.Q.value = 0.8;
       const gain = ctx.createGain();
-      gain.gain.value = 0.25;
+      gain.gain.value = 0.45;
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
@@ -3422,6 +3521,10 @@ function initRitual() {
     // 烟花庆祝
     playDecryptSuccess();
     launchRitualFireworks();
+    // 个性化粒子：把愿望变成飘散的文字碎片
+    if (typeof window.transformParticlesToWishText === 'function') {
+      window.transformParticlesToWishText(wish);
+    }
   });
 
   // ===== 阶段流转 =====
@@ -3745,6 +3848,7 @@ function initSignPad() {
   let drawing = false;
   let lastX = 0, lastY = 0;
   let hasInk = false;
+  let lastScribbleSound = 0;
   const hint = wrap.querySelector('.sign-hint');
   const toCertBtn = document.getElementById('toCertBtn');
 
@@ -3768,6 +3872,14 @@ function initSignPad() {
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
+    // 钢笔沙沙声（节流：每200ms最多一声）
+    const now = Date.now();
+    if (now - lastScribbleSound > 200) {
+      lastScribbleSound = now;
+      // 模拟钢笔划过纸张的沙沙声
+      playTone(2000 + Math.random() * 1500, 0.04, 'sawtooth', 0.03);
+      playTone(3000 + Math.random() * 1000, 0.03, 'sawtooth', 0.015, 0.02);
+    }
     lastX = p.x; lastY = p.y;
   }
   function end(e){ if(e) e.preventDefault(); drawing = false; }
@@ -3853,6 +3965,74 @@ function showCertificate() {
 
   playLevelComplete();
 
+  // 许愿彩蛋：点击证书印章或星星触发隐藏烟花+祝福
+  const certCard = document.getElementById('certCard');
+  const certSeal = certCard.querySelector('.cert-seal');
+  const certEmblem = certCard.querySelector('.cert-emblem');
+  const hiddenBlessings = [
+    '生日快乐，愿你每天都闪闪发光！',
+    '这世界因你而美好，继续做自己吧！',
+    '20岁的你，未来有无限可能！',
+    '感谢你出现在这个世界上！',
+  ];
+  let eggUsed = 0;
+  function triggerEggEaster(target) {
+    if (eggUsed >= hiddenBlessings.length) return;
+    const msg = hiddenBlessings[eggUsed++];
+    // 烟花音效
+    playTone(1047, 0.3, 'sine', 0.25);
+    setTimeout(() => playTone(1319, 0.3, 'sine', 0.2), 100);
+    setTimeout(() => playTone(1568, 0.5, 'sine', 0.25), 200);
+    setTimeout(() => {
+      for (let i = 0; i < 12; i++) {
+        playTone(600 + Math.random() * 1200, 0.15, 'sine', 0.08, i * 0.06);
+      }
+    }, 350);
+    // 创建烟花粒子
+    const rect = target.getBoundingClientRect();
+    const cardRect = certCard.getBoundingClientRect();
+    const cx = rect.left - cardRect.left + rect.width / 2;
+    const cy = rect.top - cardRect.top + rect.height / 2;
+    for (let i = 0; i < 20; i++) {
+      const spark = document.createElement('div');
+      spark.style.cssText = `position:absolute;left:${cx}px;top:${cy}px;width:4px;height:4px;border-radius:50%;pointer-events:none;z-index:10;`;
+      const colors = ['#ffd700','#ff6b9d','#e040fb','#b388ff','#00ff88','#fff'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      spark.style.background = color;
+      spark.style.boxShadow = `0 0 6px ${color}`;
+      const angle = (Math.PI * 2 / 20) * i + Math.random() * 0.3;
+      const dist = 40 + Math.random() * 60;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      spark.style.transition = 'all 0.8s cubic-bezier(0.34,1.56,0.64,1)';
+      certCard.appendChild(spark);
+      requestAnimationFrame(() => {
+        spark.style.left = (cx + dx) + 'px';
+        spark.style.top = (cy + dy) + 'px';
+        spark.style.opacity = '0';
+        spark.style.transform = 'scale(0)';
+      });
+      setTimeout(() => spark.remove(), 900);
+    }
+    // 显示隐藏祝福语
+    const toast = document.createElement('div');
+    toast.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;
+      font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;
+      color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,0.8),0 0 24px rgba(255,107,157,0.5);
+      white-space:nowrap;opacity:0;transition:all 0.5s;pointer-events:none;
+      background:rgba(13,10,26,0.8);padding:8px 16px;border-radius:8px;border:1px solid rgba(255,215,0,0.3);`;
+    toast.textContent = msg;
+    certCard.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.top = '42%'; });
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.top = '38%';
+      setTimeout(() => toast.remove(), 500);
+    }, 2500);
+  }
+  if (certSeal) certSeal.addEventListener('click', () => triggerEggEaster(certSeal));
+  if (certEmblem) certEmblem.addEventListener('click', () => triggerEggEaster(certEmblem));
+
   // 保存纪念卡（将证书卡片转为图片下载）
   document.getElementById('certSaveBtn').onclick = function() {
     saveCertificateAsImage();
@@ -3911,7 +4091,7 @@ function saveCertificateAsImage() {
 
   if (useHtml2Canvas) {
     html2canvas(card, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       backgroundColor: null,
       logging: false,
@@ -3922,6 +4102,24 @@ function saveCertificateAsImage() {
         if (clonedCard) {
           clonedCard.style.animation = 'none';
           clonedCard.style.transform = 'none';
+          // 修复全息边框伪元素可见性
+          const holoBorder = clonedCard.querySelector('.cert-holo-border');
+          if (holoBorder) {
+            holoBorder.style.animation = 'none';
+            holoBorder.style.transform = 'rotate(45deg)';
+          }
+          // 强制伪元素可见（html2canvas 对 ::before/::after 支持有限）
+          const style = clonedDoc.createElement('style');
+          style.textContent = `
+            .cert-card::before { display: none; }
+            .cert-card::after { opacity: 1; }
+            .cert-holo-border::before { animation: none; opacity: 0.5; }
+            .cert-holo-border::after { background: rgba(20,15,40,0.95) !important; }
+            .cert-title, .cert-name { -webkit-text-fill-color: #fff !important; color: #ffd700 !important; }
+            .cert-emblem { color: #ffd700 !important; }
+            .cert-seal { border-color: rgba(255,107,157,0.8) !important; background: radial-gradient(circle,rgba(255,107,157,0.25),transparent) !important; }
+          `;
+          clonedDoc.head.appendChild(style);
         }
       }
     }).then(function(canvas) {
@@ -4333,7 +4531,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const audio = document.getElementById('bgMusic');
   const startMusic = () => {
     if (!audio) return;
-    audio.volume = 0.5;
+    audio.volume = 1.0;
     const p = audio.play();
     if (p && typeof p.then === 'function') {
       p.then(() => {
