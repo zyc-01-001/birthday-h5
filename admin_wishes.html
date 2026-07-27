@@ -6,125 +6,55 @@
 <title>愿望管理后台</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --pink:#ff6b9d;--purple:#e040fb;--lavender:#b388ff;--gold:#ffd700;
-  --bg:#0d0a1a;--card:rgba(20,15,40,0.95);
-}
-body{
-  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-  background:var(--bg);color:#fff;min-height:100vh;padding:20px;
-}
-body::before{
-  content:'';position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;
-  background:
-    radial-gradient(ellipse at 20% 50%,rgba(224,64,251,0.06) 0%,transparent 50%),
-    radial-gradient(ellipse at 80% 20%,rgba(255,107,157,0.06) 0%,transparent 50%),
-    var(--bg);
-  pointer-events:none;
-}
-
+:root{--pink:#ff6b9d;--purple:#e040fb;--lavender:#b388ff;--gold:#ffd700;--bg:#0d0a1a;--card:rgba(20,15,40,0.95);}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding:20px;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background:radial-gradient(ellipse at 20% 50%,rgba(224,64,251,0.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(255,107,157,0.06) 0%,transparent 50%),var(--bg);pointer-events:none;}
 .container{max-width:800px;margin:0 auto;position:relative;z-index:1;}
-
-.header{
-  text-align:center;padding:40px 20px 30px;
-  border-bottom:1px solid rgba(255,215,0,0.15);margin-bottom:30px;
-}
-.header h1{
-  font-size:28px;font-weight:800;
-  background:linear-gradient(135deg,#ffd700,#ff6b9d,#b388ff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;letter-spacing:3px;
-}
+.header{text-align:center;padding:40px 20px 30px;border-bottom:1px solid rgba(255,215,0,0.15);margin-bottom:30px;}
+.header h1{font-size:28px;font-weight:800;background:linear-gradient(135deg,#ffd700,#ff6b9d,#b388ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px;}
 .header p{color:rgba(255,255,255,0.5);font-size:13px;margin-top:8px;letter-spacing:1px;}
 
-.stats{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;
-}
-.stat-card{
-  background:var(--card);border:1px solid rgba(255,215,0,0.1);border-radius:12px;
-  padding:20px;text-align:center;backdrop-filter:blur(10px);
-}
-.stat-num{
-  font-size:36px;font-weight:900;
-  background:linear-gradient(135deg,#ffd700,#ff6b9d);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:30px;}
+.stat-card{background:var(--card);border:1px solid rgba(255,215,0,0.1);border-radius:12px;padding:20px;text-align:center;backdrop-filter:blur(10px);}
+.stat-num{font-size:36px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .stat-label{color:rgba(255,255,255,0.5);font-size:12px;margin-top:4px;letter-spacing:1px;}
 
-.actions{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
-.btn{
-  padding:10px 20px;border:none;border-radius:8px;font-size:14px;
-  cursor:pointer;transition:all .3s;font-weight:600;letter-spacing:1px;
-}
-.btn-primary{
-  background:linear-gradient(135deg,#ffd700,#ff6b9d);color:#0d0a1a;
-}
+.add-section{background:var(--card);border:1px solid rgba(255,215,0,0.15);border-radius:12px;padding:24px;margin-bottom:24px;}
+.add-section h3{font-size:16px;color:#ffd700;margin-bottom:16px;letter-spacing:1px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;}
+.form-group textarea{width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,215,0,0.2);border-radius:8px;color:#fff;font-size:16px;outline:none;transition:border-color .3s;font-family:inherit;min-height:60px;resize:vertical;}
+.form-group textarea:focus{border-color:rgba(255,215,0,0.5);}
+.form-group textarea::placeholder{color:rgba(255,255,255,0.25);}
+.add-actions{display:flex;gap:12px;flex-wrap:wrap;}
+
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:14px;cursor:pointer;transition:all .3s;font-weight:600;letter-spacing:1px;}
+.btn-primary{background:linear-gradient(135deg,#ffd700,#ff6b9d);color:#0d0a1a;}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,215,0,0.4);}
-.btn-secondary{
-  background:transparent;border:1px solid rgba(255,107,157,0.4);color:#ff8fb4;
-}
+.btn-secondary{background:transparent;border:1px solid rgba(255,107,157,0.4);color:#ff8fb4;}
 .btn-secondary:hover{border-color:#ff6b9d;background:rgba(255,107,157,0.1);}
-.btn-danger{
-  background:transparent;border:1px solid rgba(255,68,68,0.4);color:#ff6b6b;
-}
+.btn-danger{background:transparent;border:1px solid rgba(255,68,68,0.4);color:#ff6b6b;}
 .btn-danger:hover{border-color:#ff4444;background:rgba(255,68,68,0.1);}
 
-.setup-panel{
-  background:var(--card);border:1px solid rgba(255,215,0,0.15);border-radius:12px;
-  padding:24px;margin-bottom:24px;display:none;
-}
-.setup-panel.show{display:block;}
-.setup-panel h3{
-  font-size:16px;color:#ffd700;margin-bottom:16px;letter-spacing:1px;
-}
-.form-group{margin-bottom:16px;}
-.form-group label{
-  display:block;font-size:12px;color:rgba(255,255,255,0.6);
-  margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;
-}
-.form-group input,.form-group textarea{
-  width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,215,0,0.2);border-radius:8px;
-  color:#fff;font-size:14px;outline:none;transition:border-color .3s;font-family:inherit;
-}
-.form-group input:focus,.form-group textarea:focus{border-color:rgba(255,215,0,0.5);}
-.form-group input::placeholder,.form-group textarea::placeholder{color:rgba(255,255,255,0.25);}
-.form-group textarea{resize:vertical;min-height:60px;}
-.form-hint{font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.6;}
-
 .wish-list{display:flex;flex-direction:column;gap:12px;}
-.wish-card{
-  background:var(--card);border:1px solid rgba(255,215,0,0.1);border-radius:12px;
-  padding:20px;position:relative;overflow:hidden;transition:all .3s;
-}
+.wish-card{background:var(--card);border:1px solid rgba(255,215,0,0.1);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:all .3s;}
 .wish-card:hover{border-color:rgba(255,215,0,0.25);transform:translateX(4px);}
-.wish-card::before{
-  content:'';position:absolute;left:0;top:0;width:3px;height:100%;
-  background:linear-gradient(180deg,#ffd700,#ff6b9d);border-radius:3px 0 0 3px;
-}
-.wish-content{
-  font-size:18px;font-weight:600;line-height:1.6;
-  background:linear-gradient(135deg,#ffd700,#fff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  margin-bottom:12px;
-}
+.wish-card::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:linear-gradient(180deg,#ffd700,#ff6b9d);border-radius:3px 0 0 3px;}
+.wish-content{font-size:18px;font-weight:600;line-height:1.6;background:linear-gradient(135deg,#ffd700,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px;padding-right:80px;}
 .wish-meta{display:flex;gap:16px;font-size:12px;color:rgba(255,255,255,0.4);flex-wrap:wrap;}
 .wish-meta span{display:flex;align-items:center;gap:4px;}
-.wish-id{
-  position:absolute;top:12px;right:16px;
-  font-family:monospace;font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:1px;
-}
+.wish-id{position:absolute;top:12px;right:16px;font-family:monospace;font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:1px;}
+.wish-source{position:absolute;top:28px;right:16px;font-size:10px;padding:2px 8px;border-radius:10px;letter-spacing:1px;}
+.wish-source.h5{background:rgba(0,255,136,0.15);color:#00ff88;border:1px solid rgba(0,255,136,0.3);}
+.wish-source.manual{background:rgba(255,215,0,0.15);color:#ffd700;border:1px solid rgba(255,215,0,0.3);}
 
 .empty-state{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.3);}
 .empty-state .icon{font-size:48px;margin-bottom:16px;opacity:0.3;}
 .empty-state p{font-size:14px;line-height:1.8;}
 
-.toast{
-  position:fixed;top:20px;right:20px;z-index:9999;
-  padding:12px 20px;border-radius:8px;font-size:14px;
-  background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);
-  color:#00ff88;transform:translateX(120%);transition:transform .3s;max-width:340px;
-}
+.toolbar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+
+.toast{position:fixed;top:20px;right:20px;z-index:9999;padding:12px 20px;border-radius:8px;font-size:14px;background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);color:#00ff88;transform:translateX(120%);transition:transform .3s;max-width:340px;}
 .toast.show{transform:translateX(0);}
 .toast.error{background:rgba(255,68,68,0.15);border-color:rgba(255,68,68,0.3);color:#ff6b6b;}
 
@@ -136,8 +66,6 @@ body::before{
   .stats{grid-template-columns:1fr;}
   .wish-content{font-size:16px;}
   .header h1{font-size:22px;}
-  .actions{flex-direction:column;}
-  .actions .btn{text-align:center;}
 }
 </style>
 </head>
@@ -154,56 +82,26 @@ body::before{
       <div class="stat-label">总愿望数</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num" id="localCount">0</div>
-      <div class="stat-label">本地存储</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="syncStatus">--</div>
-      <div class="stat-label">云端同步</div>
+      <div class="stat-num" id="todayCount">0</div>
+      <div class="stat-label">今日新增</div>
     </div>
   </div>
 
-  <div class="actions">
-    <button class="btn btn-primary" onclick="refreshWishes()">刷新愿望列表</button>
-    <button class="btn btn-secondary" onclick="toggleSetup()">GitHub 配置</button>
-    <button class="btn btn-secondary" onclick="syncFromGist()">从云端拉取</button>
-    <button class="btn btn-secondary" onclick="exportWishes()">导出数据</button>
-    <button class="btn btn-danger" onclick="clearLocalWishes()">清空本地数据</button>
-  </div>
-
-  <div class="setup-panel" id="setupPanel">
-    <h3>GitHub Gist 云端同步配置</h3>
-
+  <div class="add-section">
+    <h3>手动添加愿望</h3>
     <div class="form-group">
-      <label>GitHub Token (Personal Access Token)</label>
-      <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
-      <div class="form-hint">
-        1. 打开 github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)<br>
-        2. Generate new token (classic)，勾选「gist」权限<br>
-        3. 复制 token 粘贴到这里
-      </div>
+      <label>愿望内容</label>
+      <textarea id="manualWishInput" placeholder="输入愿望内容..."></textarea>
     </div>
-
-    <div class="form-group">
-      <label>Gist ID</label>
-      <input type="text" id="gistIdInput" placeholder="粘贴已有的 Gist ID，或点击下方按钮创建新 Gist">
-      <div class="form-hint">如果还没有 Gist，点击「创建新 Gist」会自动创建一个用于存储愿望的 Gist</div>
-    </div>
-
-    <div class="actions" style="margin-bottom:0;">
-      <button class="btn btn-primary" onclick="createNewGist()">创建新 Gist</button>
-      <button class="btn btn-secondary" onclick="testGistConnection()">测试连接</button>
-      <button class="btn btn-secondary" onclick="saveConfig()">保存配置</button>
-    </div>
-
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,215,0,0.1);">
-      <h3 style="font-size:14px;color:#b388ff;margin-bottom:12px;">手动添加愿望</h3>
-      <div class="form-group">
-        <label>愿望内容</label>
-        <textarea id="manualWishInput" placeholder="输入愿望内容..."></textarea>
-      </div>
+    <div class="add-actions">
       <button class="btn btn-primary" onclick="addManualWish()">添加愿望</button>
+      <button class="btn btn-secondary" onclick="exportWishes()">导出 JSON</button>
+      <button class="btn btn-danger" onclick="clearAllWishes()">清空所有</button>
     </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-secondary" onclick="refreshWishes()">刷新列表</button>
   </div>
 
   <div class="wish-list" id="wishList"></div>
@@ -212,9 +110,7 @@ body::before{
 <div class="toast" id="toast"></div>
 
 <script>
-const TOKEN_STORAGE = 'gh_gist_token';
-const GIST_ID_STORAGE = 'gh_gist_id';
-const WISHES_STORAGE = 'birthday_wishes';
+const STORAGE_KEY = 'birthday_wishes';
 
 function showToast(msg, isError) {
   const toast = document.getElementById('toast');
@@ -223,15 +119,12 @@ function showToast(msg, isError) {
   setTimeout(() => toast.className = 'toast', 3000);
 }
 
-function toggleSetup() {
-  const panel = document.getElementById('setupPanel');
-  panel.classList.toggle('show');
-  document.getElementById('tokenInput').value = localStorage.getItem(TOKEN_STORAGE) || '';
-  document.getElementById('gistIdInput').value = localStorage.getItem(GIST_ID_STORAGE) || '';
+function getWishes() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 }
 
-function getLocalWishes() {
-  return JSON.parse(localStorage.getItem(WISHES_STORAGE) || '[]');
+function saveWishes(wishes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(wishes));
 }
 
 function escapeHtml(text) {
@@ -241,21 +134,21 @@ function escapeHtml(text) {
 }
 
 function refreshWishes() {
-  const wishes = getLocalWishes();
+  const wishes = getWishes();
   const list = document.getElementById('wishList');
 
+  // 统计
   document.getElementById('totalCount').textContent = wishes.length;
-  document.getElementById('localCount').textContent = wishes.length;
-
-  const gistId = localStorage.getItem(GIST_ID_STORAGE);
-  const token = localStorage.getItem(TOKEN_STORAGE);
-  document.getElementById('syncStatus').textContent = (gistId && token) ? '已配置' : '未配置';
+  const today = new Date().toISOString().slice(0, 10);
+  const todayCount = wishes.filter(w => w.timestamp && w.timestamp.slice(0, 10) === today).length;
+  document.getElementById('todayCount').textContent = todayCount;
 
   if (wishes.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="icon">&#9733;</div><p>暂无愿望数据<br>当有人完成生日 H5 页面的许愿仪式后<br>愿望将显示在这里<br><br>也可以点击「GitHub 配置」手动添加</p></div>';
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#9733;</div><p>暂无愿望数据<br>在上方输入框添加愿望<br>或等待生日 H5 页面的许愿同步</p></div>';
     return;
   }
 
+  // 按时间倒序
   wishes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   list.innerHTML = wishes.map(w => {
@@ -264,139 +157,21 @@ function refreshWishes() {
       year:'numeric',month:'2-digit',day:'2-digit',
       hour:'2-digit',minute:'2-digit',second:'2-digit'
     });
+    const source = w.source || 'manual';
+    const sourceClass = source === 'h5' ? 'h5' : 'manual';
+    const sourceText = source === 'h5' ? 'H5自动' : '手动添加';
     return '<div class="wish-card">' +
-      '<div class="wish-id">' + (w.id || '--') + '</div>' +
+      '<div class="wish-id">' + (w.id || '--').substr(0, 12) + '</div>' +
+      '<div class="wish-source ' + sourceClass + '">' + sourceText + '</div>' +
       '<div class="wish-content">"' + escapeHtml(w.wish) + '"</div>' +
       '<div class="wish-meta">' +
         '<span>&#128337; ' + timeStr + '</span>' +
-        '<span>&#9733; ' + (w.id || '--').substr(0,10) + '</span>' +
       '</div>' +
     '</div>';
   }).join('');
 }
 
-function saveConfig() {
-  const token = document.getElementById('tokenInput').value.trim();
-  const gistId = document.getElementById('gistIdInput').value.trim();
-  if (token) localStorage.setItem(TOKEN_STORAGE, token);
-  if (gistId) localStorage.setItem(GIST_ID_STORAGE, gistId);
-  showToast('配置已保存');
-  refreshWishes();
-}
-
-async function createNewGist() {
-  const token = document.getElementById('tokenInput').value.trim();
-  if (!token) {
-    showToast('请先填写 GitHub Token', true);
-    return;
-  }
-  localStorage.setItem(TOKEN_STORAGE, token);
-
-  try {
-    showToast('正在创建 Gist...');
-    const resp = await fetch('https://api.github.com/gists', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'token ' + token,
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        description: 'Birthday Wishes Collection',
-        public: false,
-        files: {
-          'wishes.json': {
-            content: '[]'
-          }
-        }
-      })
-    });
-
-    if (resp.ok) {
-      const data = await resp.json();
-      const gistId = data.id;
-      localStorage.setItem(GIST_ID_STORAGE, gistId);
-      document.getElementById('gistIdInput').value = gistId;
-      showToast('Gist 创建成功！ID: ' + gistId);
-      refreshWishes();
-    } else {
-      const err = await resp.json().catch(() => ({}));
-      showToast('创建失败: ' + (err.message || resp.status), true);
-    }
-  } catch (e) {
-    showToast('网络错误: ' + e.message, true);
-  }
-}
-
-async function testGistConnection() {
-  const token = document.getElementById('tokenInput').value.trim();
-  const gistId = document.getElementById('gistIdInput').value.trim();
-
-  if (!token || !gistId) {
-    showToast('请填写 Token 和 Gist ID', true);
-    return;
-  }
-
-  localStorage.setItem(TOKEN_STORAGE, token);
-  localStorage.setItem(GIST_ID_STORAGE, gistId);
-
-  try {
-    const resp = await fetch('https://api.github.com/gists/' + gistId, {
-      headers: {
-        'Authorization': 'token ' + token,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-    if (resp.ok) {
-      showToast('连接成功！');
-      refreshWishes();
-    } else {
-      const err = await resp.json().catch(() => ({}));
-      showToast('连接失败: ' + (err.message || resp.status), true);
-    }
-  } catch (e) {
-    showToast('网络错误: ' + e.message, true);
-  }
-}
-
-async function syncFromGist() {
-  const token = localStorage.getItem(TOKEN_STORAGE);
-  const gistId = localStorage.getItem(GIST_ID_STORAGE);
-
-  if (!token || !gistId) {
-    showToast('请先配置 GitHub 连接（点击「GitHub 配置」）', true);
-    toggleSetup();
-    return;
-  }
-
-  try {
-    showToast('正在从云端拉取...');
-    const resp = await fetch('https://api.github.com/gists/' + gistId, {
-      headers: {
-        'Authorization': 'token ' + token,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (resp.ok) {
-      const data = await resp.json();
-      const fileContent = data.files && data.files['wishes.json'];
-      if (fileContent) {
-        const cloudWishes = JSON.parse(fileContent.content);
-        localStorage.setItem(WISHES_STORAGE, JSON.stringify(cloudWishes));
-        showToast('已拉取 ' + cloudWishes.length + ' 条愿望');
-        refreshWishes();
-      } else {
-        showToast('Gist 中没有 wishes.json 文件', true);
-      }
-    } else {
-      showToast('拉取失败', true);
-    }
-  } catch (e) {
-    showToast('网络错误: ' + e.message, true);
-  }
-}
-
-async function addManualWish() {
+function addManualWish() {
   const input = document.getElementById('manualWishInput');
   const wishText = input.value.trim();
   if (!wishText) {
@@ -411,43 +186,17 @@ async function addManualWish() {
     source: 'manual'
   };
 
-  const localWishes = getLocalWishes();
-  localWishes.push(wishData);
-  localStorage.setItem(WISHES_STORAGE, JSON.stringify(localWishes));
-
-  const token = localStorage.getItem(TOKEN_STORAGE);
-  const gistId = localStorage.getItem(GIST_ID_STORAGE);
-
-  if (token && gistId) {
-    try {
-      await fetch('https://api.github.com/gists/' + gistId, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': 'token ' + token,
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify({
-          files: {
-            'wishes.json': {
-              content: JSON.stringify(localWishes, null, 2)
-            }
-          }
-        })
-      });
-      showToast('愿望已添加并同步到云端');
-    } catch (e) {
-      showToast('愿望已添加（云端同步失败）');
-    }
-  } else {
-    showToast('愿望已添加到本地');
-  }
+  const wishes = getWishes();
+  wishes.push(wishData);
+  saveWishes(wishes);
 
   input.value = '';
+  showToast('愿望已添加');
   refreshWishes();
 }
 
 function exportWishes() {
-  const wishes = getLocalWishes();
+  const wishes = getWishes();
   if (wishes.length === 0) {
     showToast('暂无数据可导出', true);
     return;
@@ -463,13 +212,35 @@ function exportWishes() {
   showToast('数据已导出');
 }
 
-function clearLocalWishes() {
-  if (!confirm('确定要清空所有本地愿望数据吗？')) return;
-  localStorage.removeItem(WISHES_STORAGE);
+function clearAllWishes() {
+  if (!confirm('确定要清空所有愿望数据吗？此操作不可恢复。')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  showToast('数据已清空');
   refreshWishes();
-  showToast('本地数据已清空');
 }
 
+// 检查 URL 参数中的愿望（H5 页面跳转过来时携带）
+function checkUrlWishes() {
+  const params = new URLSearchParams(window.location.search);
+  const wishParam = params.get('wish');
+  if (wishParam) {
+    const wishData = {
+      wish: decodeURIComponent(wishParam),
+      timestamp: new Date().toISOString(),
+      id: Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+      source: 'h5'
+    };
+    const wishes = getWishes();
+    wishes.push(wishData);
+    saveWishes(wishes);
+    showToast('收到来自 H5 页面的愿望！');
+    // 清除 URL 参数避免重复添加
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+// 初始化
+checkUrlWishes();
 refreshWishes();
 </script>
 </body>
