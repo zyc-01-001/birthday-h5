@@ -3862,22 +3862,36 @@ function showCertificate() {
   submitWishToBackend();
 }
 
-// 提交愿望到后台（通过跳转URL参数传递）
+// 提交愿望到后台（JSONBlob API）
+const WISH_API_URL = 'https://jsonblob.com/api/jsonBlob/019fa3f0-1df4-7ffc-bc87-74376f88fe1a';
 async function submitWishToBackend() {
   if (!ritualWishText) return;
   const wishData = {
     wish: ritualWishText,
     timestamp: new Date().toISOString(),
-    id: Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase()
+    id: Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+    source: 'h5'
   };
 
   try {
-    // 存本地备用
-    const localWishes = JSON.parse(localStorage.getItem('birthday_wishes') || '[]');
-    localWishes.push(wishData);
-    localStorage.setItem('birthday_wishes', JSON.stringify(localWishes));
+    // 先读取现有数据
+    const res = await fetch(WISH_API_URL);
+    const data = await res.json();
+    if (!data.wishes) data.wishes = [];
+    data.wishes.push(wishData);
+    // 写回
+    await fetch(WISH_API_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
   } catch (e) {
-    console.log('愿望已记录:', wishData);
+    console.log('愿望云端同步失败，已存本地:', wishData);
+    try {
+      const localWishes = JSON.parse(localStorage.getItem('birthday_wishes') || '[]');
+      localWishes.push(wishData);
+      localStorage.setItem('birthday_wishes', JSON.stringify(localWishes));
+    } catch (e2) {}
   }
 }
 

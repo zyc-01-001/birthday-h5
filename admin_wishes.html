@@ -110,7 +110,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;z-ind
 <div class="toast" id="toast"></div>
 
 <script>
-const STORAGE_KEY = 'birthday_wishes';
+const WISH_API_URL = 'https://jsonblob.com/api/jsonBlob/019fa3f0-1df4-7ffc-bc87-74376f88fe1a';
 
 function showToast(msg, isError) {
   const toast = document.getElementById('toast');
@@ -119,22 +119,42 @@ function showToast(msg, isError) {
   setTimeout(() => toast.className = 'toast', 3000);
 }
 
-function getWishes() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-}
-
-function saveWishes(wishes) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(wishes));
-}
-
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
 
-function refreshWishes() {
-  const wishes = getWishes();
+// 从 JSONBlob API 读取愿望
+async function getWishes() {
+  try {
+    const res = await fetch(WISH_API_URL);
+    if (res.ok) {
+      const data = await res.json();
+      return data.wishes || [];
+    }
+  } catch (e) {
+    console.error('读取云端数据失败:', e);
+  }
+  return [];
+}
+
+// 写入愿望到 JSONBlob API
+async function saveWishes(wishes) {
+  try {
+    await fetch(WISH_API_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wishes: wishes })
+    });
+  } catch (e) {
+    console.error('写入云端数据失败:', e);
+    showToast('云端同步失败', true);
+  }
+}
+
+async function refreshWishes() {
+  const wishes = await getWishes();
   const list = document.getElementById('wishList');
 
   // 统计
@@ -144,7 +164,7 @@ function refreshWishes() {
   document.getElementById('todayCount').textContent = todayCount;
 
   if (wishes.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="icon">&#9733;</div><p>暂无愿望数据<br>在上方输入框添加愿望<br>或等待生日 H5 页面的许愿同步</p></div>';
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#9733;</div><p>暂无愿望数据<br>在上方输入框添加愿望<br>或等待 H5 页面的许愿同步</p></div>';
     return;
   }
 
@@ -171,7 +191,7 @@ function refreshWishes() {
   }).join('');
 }
 
-function addManualWish() {
+async function addManualWish() {
   const input = document.getElementById('manualWishInput');
   const wishText = input.value.trim();
   if (!wishText) {
@@ -186,17 +206,17 @@ function addManualWish() {
     source: 'manual'
   };
 
-  const wishes = getWishes();
+  const wishes = await getWishes();
   wishes.push(wishData);
-  saveWishes(wishes);
+  await saveWishes(wishes);
 
   input.value = '';
   showToast('愿望已添加');
   refreshWishes();
 }
 
-function exportWishes() {
-  const wishes = getWishes();
+async function exportWishes() {
+  const wishes = await getWishes();
   if (wishes.length === 0) {
     showToast('暂无数据可导出', true);
     return;
@@ -212,35 +232,17 @@ function exportWishes() {
   showToast('数据已导出');
 }
 
-function clearAllWishes() {
+async function clearAllWishes() {
   if (!confirm('确定要清空所有愿望数据吗？此操作不可恢复。')) return;
-  localStorage.removeItem(STORAGE_KEY);
+  await saveWishes([]);
   showToast('数据已清空');
   refreshWishes();
 }
 
-// 检查 URL 参数中的愿望（H5 页面跳转过来时携带）
-function checkUrlWishes() {
-  const params = new URLSearchParams(window.location.search);
-  const wishParam = params.get('wish');
-  if (wishParam) {
-    const wishData = {
-      wish: decodeURIComponent(wishParam),
-      timestamp: new Date().toISOString(),
-      id: Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
-      source: 'h5'
-    };
-    const wishes = getWishes();
-    wishes.push(wishData);
-    saveWishes(wishes);
-    showToast('收到来自 H5 页面的愿望！');
-    // 清除 URL 参数避免重复添加
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-}
+// 每30秒自动刷新
+setInterval(refreshWishes, 30000);
 
 // 初始化
-checkUrlWishes();
 refreshWishes();
 </script>
 </body>
