@@ -4081,7 +4081,7 @@ function saveCertificateAsImage() {
   saveCertificateFallback();
 }
 
-// 降级方案：Canvas 手动重绘证书（尽量还原高级效果）
+// 高保真 Canvas 手绘证书（1:1 还原网页视觉效果）
 function saveCertificateFallback() {
   const W = 640, H = 900;
   const cv = document.createElement('canvas');
@@ -4089,7 +4089,7 @@ function saveCertificateFallback() {
   const c = cv.getContext('2d');
   c.scale(2, 2);
 
-  // 背景
+  // ===== 背景：深紫渐变 + 多层叠加 =====
   const bg = c.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, '#2a1840');
   bg.addColorStop(1, '#140c23');
@@ -4097,28 +4097,72 @@ function saveCertificateFallback() {
   roundRect(c, 0, 0, W, H, 20);
   c.fill();
 
-  // 外发光
-  c.shadowColor = 'rgba(255,107,157,0.3)';
-  c.shadowBlur = 40;
-  c.strokeStyle = 'rgba(255,107,157,0.15)';
-  c.lineWidth = 1;
-  roundRect(c, 4, 4, W-8, H-8, 18);
+  // 背景微光纹理（增加深度感）
+  const bgTex = c.createRadialGradient(W*0.3, H*0.2, 0, W*0.3, H*0.2, 300);
+  bgTex.addColorStop(0, 'rgba(255,107,157,0.06)');
+  bgTex.addColorStop(1, 'transparent');
+  c.fillStyle = bgTex;
+  c.fillRect(0, 0, W, H);
+  const bgTex2 = c.createRadialGradient(W*0.7, H*0.7, 0, W*0.7, H*0.7, 280);
+  bgTex2.addColorStop(0, 'rgba(176,102,255,0.05)');
+  bgTex2.addColorStop(1, 'transparent');
+  c.fillStyle = bgTex2;
+  c.fillRect(0, 0, W, H);
+
+  // ===== 外发光（粉色大范围光晕） =====
+  c.save();
+  c.shadowColor = 'rgba(255,107,157,0.35)';
+  c.shadowBlur = 60;
+  c.strokeStyle = 'rgba(255,107,157,0.2)';
+  c.lineWidth = 2;
+  roundRect(c, 2, 2, W-4, H-4, 19);
   c.stroke();
   c.shadowBlur = 0;
+  c.restore();
 
-  // 全息边框（渐变描边）
-  const borderGrad = c.createLinearGradient(0, 0, W, H);
-  borderGrad.addColorStop(0, '#ffd700');
-  borderGrad.addColorStop(0.25, '#ff6b9d');
-  borderGrad.addColorStop(0.5, '#e040fb');
-  borderGrad.addColorStop(0.75, '#b388ff');
-  borderGrad.addColorStop(1, '#00ff88');
-  c.strokeStyle = borderGrad;
-  c.lineWidth = 2;
+  // ===== 全息彩虹旋转边框（用多段弧线模拟 conic-gradient） =====
+  c.save();
+  roundRect(c, 10, 10, W-20, H-20, 14);
+  c.clip();
+  // 旋转全息效果 - 用多层渐变叠加
+  const holoColors = ['#ffd700','#ff6b9d','#e040fb','#b388ff','#00ff88','#ffd700'];
+  const holoAlphas = [0.45,0.35,0.4,0.35,0.3,0.45];
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const gx = W/2 + Math.cos(angle) * W * 0.5;
+    const gy = H/2 + Math.sin(angle) * H * 0.5;
+    const holoG = c.createRadialGradient(gx, gy, 0, gx, gy, W*0.6);
+    holoG.addColorStop(0, holoColors[i].replace('#','rgba(') ? hexToRgba(holoColors[i], holoAlphas[i]) : 'transparent');
+    holoG.addColorStop(1, 'transparent');
+    c.fillStyle = holoG;
+    c.fillRect(0, 0, W, H);
+  }
+  // 内遮罩：挖掉中间部分，只留边框光
+  c.globalCompositeOperation = 'destination-in';
+  roundRect(c, 0, 0, W, H, 14);
+  c.fill();
+  c.globalCompositeOperation = 'destination-over';
+  // 重新绘制背景
+  const bgRestore = c.createLinearGradient(0, 0, W, H);
+  bgRestore.addColorStop(0, '#2a1840');
+  bgRestore.addColorStop(1, '#140c23');
+  c.fillStyle = bgRestore;
+  roundRect(c, 2, 2, W-4, H-4, 18);
+  c.fill();
+  // 挖空内部露出背景
+  c.globalCompositeOperation = 'destination-out';
+  roundRect(c, 14, 14, W-28, H-28, 12);
+  c.fill();
+  c.globalCompositeOperation = 'source-over';
+  c.restore();
+
+  // 边框实线描边
+  c.strokeStyle = 'rgba(255,215,0,0.25)';
+  c.lineWidth = 1;
   roundRect(c, 10, 10, W-20, H-20, 14);
   c.stroke();
 
-  // 内边框（虚线）
+  // ===== 内边框（虚线） =====
   c.strokeStyle = 'rgba(255,215,0,0.12)';
   c.lineWidth = 1;
   c.setLineDash([4, 4]);
@@ -4126,155 +4170,244 @@ function saveCertificateFallback() {
   c.stroke();
   c.setLineDash([]);
 
-  // 角标（四角）
-  c.strokeStyle = '#ffd700'; c.lineWidth = 2.5;
-  c.shadowColor = 'rgba(255,215,0,0.4)'; c.shadowBlur = 8;
+  // ===== 角标（四角）带发光 =====
   [[24,24,1,1],[W-24,24,-1,1],[24,H-24,1,-1],[W-24,H-24,-1,-1]].forEach(([x,y,sx,sy])=>{
-    c.beginPath(); c.moveTo(x, y+28*sy); c.lineTo(x, y); c.lineTo(x+28*sx, y); c.stroke();
+    c.save();
+    c.strokeStyle = '#ffd700'; c.lineWidth = 2.5;
+    c.shadowColor = 'rgba(255,215,0,0.6)'; c.shadowBlur = 12;
+    c.beginPath(); c.moveTo(x, y+30*sy); c.lineTo(x, y); c.lineTo(x+30*sx, y); c.stroke();
+    c.shadowBlur = 0;
+    c.restore();
   });
-  c.shadowBlur = 0;
 
-  // 侧装饰线
+  // ===== 侧装饰线 =====
   const sideGradL = c.createLinearGradient(0, H*0.25, 0, H*0.75);
   sideGradL.addColorStop(0, 'transparent');
-  sideGradL.addColorStop(0.5, 'rgba(255,215,0,0.2)');
+  sideGradL.addColorStop(0.3, 'rgba(255,215,0,0.2)');
+  sideGradL.addColorStop(0.5, 'rgba(255,215,0,0.15)');
+  sideGradL.addColorStop(0.7, 'rgba(255,215,0,0.2)');
   sideGradL.addColorStop(1, 'transparent');
   c.strokeStyle = sideGradL; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(24, H*0.25); c.lineTo(24, H*0.75); c.stroke();
+  c.beginPath(); c.moveTo(20, H*0.25); c.lineTo(20, H*0.75); c.stroke();
 
   const sideGradR = c.createLinearGradient(0, H*0.25, 0, H*0.75);
   sideGradR.addColorStop(0, 'transparent');
-  sideGradR.addColorStop(0.5, 'rgba(255,107,157,0.2)');
+  sideGradR.addColorStop(0.3, 'rgba(255,107,157,0.2)');
+  sideGradR.addColorStop(0.5, 'rgba(255,107,157,0.15)');
+  sideGradR.addColorStop(0.7, 'rgba(255,107,157,0.2)');
   sideGradR.addColorStop(1, 'transparent');
   c.strokeStyle = sideGradR;
-  c.beginPath(); c.moveTo(W-24, H*0.25); c.lineTo(W-24, H*0.75); c.stroke();
+  c.beginPath(); c.moveTo(W-20, H*0.25); c.lineTo(W-20, H*0.75); c.stroke();
 
-  // 顶部光晕
-  const topGlow = c.createRadialGradient(W/2, 0, 0, W/2, 0, 200);
-  topGlow.addColorStop(0, 'rgba(255,107,157,0.25)');
-  topGlow.addColorStop(0.5, 'rgba(255,215,0,0.08)');
+  // ===== 顶部大光晕（粉色+金色） =====
+  const topGlow = c.createRadialGradient(W/2, -20, 0, W/2, -20, 260);
+  topGlow.addColorStop(0, 'rgba(255,107,157,0.3)');
+  topGlow.addColorStop(0.3, 'rgba(255,215,0,0.1)');
+  topGlow.addColorStop(0.6, 'rgba(176,102,255,0.05)');
   topGlow.addColorStop(1, 'transparent');
   c.fillStyle = topGlow;
-  c.fillRect(0, 0, W, 160);
+  c.fillRect(0, 0, W, 200);
 
-  // 水印
+  // 底部微光
+  const btmGlow = c.createRadialGradient(W/2, H+20, 0, W/2, H+20, 200);
+  btmGlow.addColorStop(0, 'rgba(255,107,157,0.08)');
+  btmGlow.addColorStop(1, 'transparent');
+  c.fillStyle = btmGlow;
+  c.fillRect(0, H-180, W, 180);
+
+  // ===== 装饰粒子（随机金色小点） =====
+  const rng = mulberry32(42);
+  for (let i = 0; i < 20; i++) {
+    const px = rng() * W;
+    const py = rng() * H;
+    const ps = 1 + rng() * 2;
+    const pa = 0.2 + rng() * 0.5;
+    c.save();
+    c.fillStyle = '#ffd700';
+    c.globalAlpha = pa;
+    c.shadowColor = 'rgba(255,215,0,0.6)';
+    c.shadowBlur = 8;
+    c.beginPath(); c.arc(px, py, ps, 0, Math.PI*2); c.fill();
+    c.restore();
+  }
+
+  // ===== 水印 =====
   c.save();
   c.translate(W/2, H/2);
   c.rotate(-0.5);
-  c.font = '900 44px Orbitron, sans-serif';
-  c.fillStyle = 'rgba(255,215,0,0.03)';
+  c.font = '900 52px Orbitron, sans-serif';
   c.textAlign = 'center';
+  // 多层微光水印
+  c.fillStyle = 'rgba(255,215,0,0.02)';
   c.fillText('HAPPY BIRTHDAY', 0, 0);
+  c.fillText('HAPPY BIRTHDAY', 0, 50);
   c.restore();
 
-  // emblem
+  // ===== Emblem 星标 =====
   c.textAlign = 'center';
-  c.font = '32px serif';
+  c.save();
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.6)'; c.shadowBlur = 20;
-  c.fillText('✦', W/2, 80);
-  c.shadowBlur = 0;
+  c.shadowColor = 'rgba(255,215,0,0.8)';
+  c.shadowBlur = 25;
+  c.font = '36px serif';
+  c.fillText('✦', W/2, 78);
+  // 第二层发光
+  c.shadowBlur = 50;
+  c.globalAlpha = 0.4;
+  c.fillText('✦', W/2, 78);
+  c.restore();
 
-  // 标题
+  // ===== 标题 =====
+  c.save();
   c.font = '900 26px Orbitron, sans-serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.6)'; c.shadowBlur = 12;
+  c.shadowColor = 'rgba(255,215,0,0.7)';
+  c.shadowBlur = 16;
   c.fillText('生日纪念证书', W/2, 118);
-  c.shadowBlur = 0;
+  c.shadowBlur = 30;
+  c.globalAlpha = 0.3;
+  c.fillText('生日纪念证书', W/2, 118);
+  c.restore();
 
-  // 英文副标题
-  c.font = '500 10px monospace';
-  c.fillStyle = 'rgba(179,136,255,0.8)';
+  // ===== 英文副标题 =====
+  c.save();
+  c.font = '500 10px "JetBrains Mono", monospace';
+  c.fillStyle = 'rgba(179,136,255,0.85)';
+  c.shadowColor = 'rgba(176,102,255,0.5)';
+  c.shadowBlur = 10;
   c.fillText('BIRTHDAY COMMEMORATION', W/2, 138);
+  c.restore();
 
-  // 钻石装饰
-  drawDiamond(c, W/2-16, 150, 4, '#ffd700');
-  c.font = '12px serif'; c.fillStyle = 'rgba(255,215,0,0.7)';
-  c.fillText('◆', W/2, 154);
-  drawDiamond(c, W/2+16, 150, 4, '#ffd700');
+  // ===== 钻石装饰 =====
+  c.save();
+  c.fillStyle = '#ffd700';
+  c.shadowColor = 'rgba(255,215,0,0.6)';
+  c.shadowBlur = 8;
+  drawDiamond(c, W/2-16, 150, 5, '#ffd700');
+  drawDiamond(c, W/2, 152, 3, '#ffd700');
+  drawDiamond(c, W/2+16, 150, 5, '#ffd700');
+  c.restore();
 
-  // 分隔线
-  const divGrad = c.createLinearGradient(W*0.15, 0, W*0.85, 0);
+  // ===== 分隔线1 =====
+  const divGrad = c.createLinearGradient(W*0.12, 0, W*0.88, 0);
   divGrad.addColorStop(0, 'transparent');
-  divGrad.addColorStop(0.3, 'rgba(255,215,0,0.3)');
+  divGrad.addColorStop(0.15, 'rgba(255,215,0,0.15)');
+  divGrad.addColorStop(0.35, 'rgba(255,215,0,0.35)');
   divGrad.addColorStop(0.5, 'rgba(255,215,0,0.5)');
-  divGrad.addColorStop(0.7, 'rgba(255,215,0,0.3)');
+  divGrad.addColorStop(0.65, 'rgba(255,215,0,0.35)');
+  divGrad.addColorStop(0.85, 'rgba(255,215,0,0.15)');
   divGrad.addColorStop(1, 'transparent');
   c.strokeStyle = divGrad; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(W*0.15, 168); c.lineTo(W*0.85, 168); c.stroke();
-  c.font = '11px serif'; c.fillStyle = 'rgba(255,215,0,0.6)';
-  c.fillText('✧', W/2, 172);
+  c.beginPath(); c.moveTo(W*0.12, 168); c.lineTo(W*0.88, 168); c.stroke();
+  c.save();
+  c.font = '14px serif'; c.fillStyle = '#ffd700';
+  c.shadowColor = 'rgba(255,215,0,0.5)'; c.shadowBlur = 6;
+  c.fillText('✧', W/2, 173);
+  c.restore();
 
-  // 兹证明
-  c.font = '500 16px Rajdhani, sans-serif';
-  c.fillStyle = 'rgba(255,255,255,0.75)';
+  // ===== 兹证明 =====
+  c.save();
+  c.font = '500 17px "Rajdhani", sans-serif';
+  c.fillStyle = 'rgba(255,255,255,0.8)';
+  c.shadowColor = 'rgba(255,255,255,0.2)';
+  c.shadowBlur = 4;
   c.fillText('兹证明', W/2, 210);
+  c.restore();
 
-  // 名字
-  c.font = '900 34px Orbitron, sans-serif';
+  // ===== 名字 =====
+  c.save();
+  c.font = '900 36px Orbitron, sans-serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,107,157,0.5)'; c.shadowBlur = 12;
-  c.fillText('张慧艳', W/2, 252);
-  c.shadowBlur = 0;
+  c.shadowColor = 'rgba(255,107,157,0.6)';
+  c.shadowBlur = 16;
+  c.fillText('张慧艳', W/2, 255);
+  // 双层发光
+  c.shadowColor = 'rgba(255,215,0,0.4)';
+  c.shadowBlur = 30;
+  c.globalAlpha = 0.35;
+  c.fillText('张慧艳', W/2, 255);
+  c.restore();
 
-  // 日期
-  c.font = '700 15px Rajdhani, sans-serif';
+  // ===== 日期 =====
+  c.save();
+  c.font = '700 15px "Rajdhani", sans-serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.3)'; c.shadowBlur = 6;
-  c.fillText('于 2025年8月10日 迎来 20 岁生日', W/2, 290);
-  c.shadowBlur = 0;
+  c.shadowColor = 'rgba(255,215,0,0.4)';
+  c.shadowBlur = 8;
+  c.fillText('于 2025年8月10日 迎来 20 岁生日', W/2, 292);
+  c.restore();
 
-  // 分隔线2
-  c.strokeStyle = divGrad;
-  c.beginPath(); c.moveTo(W*0.15, 310); c.lineTo(W*0.85, 310); c.stroke();
-  c.font = '11px serif'; c.fillStyle = 'rgba(255,215,0,0.6)';
-  c.fillText('♡', W/2, 314);
+  // ===== 分隔线2 =====
+  c.save();
+  c.strokeStyle = divGrad; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(W*0.12, 314); c.lineTo(W*0.88, 314); c.stroke();
+  c.font = '14px serif'; c.fillStyle = 'rgba(255,107,157,0.6)';
+  c.shadowColor = 'rgba(255,107,157,0.4)'; c.shadowBlur = 6;
+  c.fillText('♡', W/2, 319);
+  c.restore();
 
-  // 愿望
-  c.font = 'italic 13px Rajdhani, sans-serif';
+  // ===== 愿望引文 =====
+  c.save();
+  c.font = 'italic 14px "Rajdhani", sans-serif';
   c.fillStyle = '#b388ff';
-  c.shadowColor = 'rgba(176,102,255,0.4)'; c.shadowBlur = 8;
+  c.shadowColor = 'rgba(176,102,255,0.5)';
+  c.shadowBlur = 12;
   const wish = ritualWishText || '愿前程似锦，万事顺遂';
-  wrapText(c, '"' + wish + '"', W/2, 345, W - 80, 22);
-  c.shadowBlur = 0;
+  wrapText(c, '"' + wish + '"', W/2, 350, W - 90, 24);
+  c.restore();
 
-  // 分隔线3（签名区上方）
-  c.strokeStyle = 'rgba(255,215,0,0.15)'; c.lineWidth = 1;
+  // ===== 分隔线3（签名区上方） =====
+  c.strokeStyle = 'rgba(255,215,0,0.18)'; c.lineWidth = 1;
   c.beginPath(); c.moveTo(50, 680); c.lineTo(W-50, 680); c.stroke();
 
-  // 签名
+  // ===== 签名区 =====
   c.textAlign = 'left';
-  c.fillStyle = 'rgba(255,255,255,0.4)'; c.font = '500 10px monospace';
+  c.save();
+  c.fillStyle = 'rgba(255,255,255,0.4)'; c.font = '500 10px "JetBrains Mono", monospace';
   c.fillText('WITNESS SIGNATURE', 60, 710);
   c.font = '400 11px sans-serif';
   c.fillStyle = 'rgba(255,255,255,0.35)';
   c.fillText('见证签名', 60, 726);
+  c.restore();
   const signCanvas = document.getElementById('signPad');
-  if (signCanvas) c.drawImage(signCanvas, 60, 735, 200, 70);
+  if (signCanvas) {
+    c.save();
+    c.shadowColor = 'rgba(255,255,255,0.15)';
+    c.shadowBlur = 4;
+    c.drawImage(signCanvas, 60, 735, 200, 70);
+    c.restore();
+  }
 
-  // 印章
+  // ===== 印章 =====
   c.save();
   c.translate(W - 90, 745);
   c.rotate(-0.2);
+  // 印章填充背景
+  const sealBg = c.createRadialGradient(0, 0, 0, 0, 0, 32);
+  sealBg.addColorStop(0, 'rgba(255,107,157,0.15)');
+  sealBg.addColorStop(1, 'rgba(255,107,157,0.05)');
+  c.fillStyle = sealBg;
+  c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.fill();
   // 印章外圈虚线
-  c.strokeStyle = 'rgba(255,107,157,0.3)'; c.lineWidth = 1;
+  c.strokeStyle = 'rgba(255,107,157,0.35)'; c.lineWidth = 1;
   c.setLineDash([3, 3]);
   c.beginPath(); c.arc(0, 0, 40, 0, Math.PI*2); c.stroke();
   c.setLineDash([]);
   // 印章主体
-  c.strokeStyle = 'rgba(255,107,157,0.8)'; c.lineWidth = 2.5;
-  c.shadowColor = 'rgba(255,107,157,0.5)'; c.shadowBlur = 16;
+  c.strokeStyle = 'rgba(255,107,157,0.85)'; c.lineWidth = 2.5;
+  c.shadowColor = 'rgba(255,107,157,0.6)'; c.shadowBlur = 20;
   c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.stroke();
   c.shadowBlur = 0;
-  c.fillStyle = '#ff6b9d'; c.font = '900 13px sans-serif'; c.textAlign = 'center';
-  c.fillText('20', 0, -3); c.font = '600 11px sans-serif'; c.fillText('生日', 0, 15);
+  c.fillStyle = '#ff6b9d'; c.font = '900 14px sans-serif'; c.textAlign = 'center';
+  c.shadowColor = 'rgba(255,107,157,0.4)'; c.shadowBlur = 6;
+  c.fillText('20', 0, -2); c.font = '600 11px sans-serif'; c.fillText('生日', 0, 16);
   c.restore();
 
-  // 序列号
+  // ===== 序列号 =====
   c.textAlign = 'center';
   const serialEl = document.getElementById('certSerial');
   c.fillStyle = 'rgba(255,255,255,0.25)'; c.font = '400 8px monospace';
-  c.fillText(serialEl ? serialEl.textContent : '', W/2, 830);
+  c.fillText(serialEl ? serialEl.textContent : '', W/2, 840);
 
   const dataURL = cv.toDataURL('image/png');
   const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
@@ -4293,6 +4426,24 @@ function saveCertificateFallback() {
     }, 'image/png');
   }
   playDecryptSuccess();
+}
+
+// 固定种子随机数生成器（保证粒子位置一致）
+function mulberry32(a) {
+  return function() {
+    var t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+// hex 转 rgba
+function hexToRgba(hex, alpha) {
+  var r = parseInt(hex.slice(1,3),16);
+  var g = parseInt(hex.slice(3,5),16);
+  var b = parseInt(hex.slice(5,7),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
 function drawDiamond(ctx, x, y, size, color) {
