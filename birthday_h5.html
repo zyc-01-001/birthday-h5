@@ -4080,7 +4080,7 @@ function saveCertificateAsImage() {
   saveCertificateCanvas();
 }
 
-// 高保真 Canvas 绘制证书（精确还原网页视觉效果）
+// 高保真 Canvas 绘制证书（精确还原网页视觉效果，多层半透明绘制替代 shadowBlur）
 function saveCertificateCanvas() {
   var W = 640, H = 900;
   var cv = document.createElement('canvas');
@@ -4096,13 +4096,20 @@ function saveCertificateCanvas() {
   roundRect(c, 0, 0, W, H, 20);
   c.fill();
 
-  // ===== 2. 全息彩虹边框（用描边+多层发光模拟） =====
-  // 先画外层发光
+  // ===== 2. 全息彩虹边框（多层半透明描边，无 shadowBlur） =====
+  // 外层发光：宽线低透明度
   c.save();
-  c.shadowColor = 'rgba(255,107,157,0.5)';
-  c.shadowBlur = 80;
-  c.strokeStyle = 'rgba(255,107,157,0.15)';
-  c.lineWidth = 4;
+  c.globalAlpha = 0.15;
+  c.strokeStyle = 'rgba(255,107,157,1)';
+  c.lineWidth = 8;
+  roundRect(c, 10, 10, W-20, H-20, 14);
+  c.stroke();
+  c.restore();
+  // 中层发光
+  c.save();
+  c.globalAlpha = 0.1;
+  c.strokeStyle = 'rgba(255,107,157,1)';
+  c.lineWidth = 20;
   roundRect(c, 10, 10, W-20, H-20, 14);
   c.stroke();
   c.restore();
@@ -4139,17 +4146,26 @@ function saveCertificateCanvas() {
     return {x: bx, y: by};
   }
 
-  // 绘制多段彩色描边
+  // 绘制多段彩色描边（每段2层：底层宽线低透明度 + 顶层细线高透明度）
   for (var i = 0; i < segCount; i++) {
     var t1 = i / segCount;
     var t2 = (i + 1) / segCount;
     var p1 = getPointOnRect(t1);
     var p2 = getPointOnRect(t2);
+    // 底层发光层
     c.save();
     c.strokeStyle = colors[i];
-    c.lineWidth = 2.5;
-    c.shadowColor = colors[i];
-    c.shadowBlur = 10;
+    c.lineWidth = 4;
+    c.globalAlpha = 0.25;
+    c.beginPath();
+    c.moveTo(p1.x, p1.y);
+    c.lineTo(p2.x, p2.y);
+    c.stroke();
+    c.restore();
+    // 顶层清晰层
+    c.save();
+    c.strokeStyle = colors[i];
+    c.lineWidth = 2;
     c.globalAlpha = 0.6;
     c.beginPath();
     c.moveTo(p1.x, p1.y);
@@ -4168,15 +4184,26 @@ function saveCertificateCanvas() {
   c.setLineDash([]);
   c.restore();
 
-  // ===== 4. 四角金色角标 =====
+  // ===== 4. 四角金色角标（2层：底层宽线 + 顶层细线） =====
   var corners = [[24,24,1,1],[W-24,24,-1,1],[24,H-24,1,-1],[W-24,H-24,-1,-1]];
   for (var ci = 0; ci < corners.length; ci++) {
     (function(corner) {
+      // 底层发光层
+      c.save();
+      c.strokeStyle = '#ffd700';
+      c.lineWidth = 4;
+      c.globalAlpha = 0.3;
+      c.beginPath();
+      c.moveTo(corner[0], corner[1] + 30 * corner[3]);
+      c.lineTo(corner[0], corner[1]);
+      c.lineTo(corner[0] + 30 * corner[2], corner[1]);
+      c.stroke();
+      c.restore();
+      // 顶层清晰层
       c.save();
       c.strokeStyle = '#ffd700';
       c.lineWidth = 2.5;
-      c.shadowColor = 'rgba(255,215,0,0.7)';
-      c.shadowBlur = 12;
+      c.globalAlpha = 1.0;
       c.beginPath();
       c.moveTo(corner[0], corner[1] + 30 * corner[3]);
       c.lineTo(corner[0], corner[1]);
@@ -4228,18 +4255,29 @@ function saveCertificateCanvas() {
   c.fillStyle = tex1;
   c.fillRect(0, 0, W, H);
 
-  // ===== 7. 装饰粒子 =====
+  // ===== 7. 装饰粒子（多层圆点模拟发光，无 shadowBlur） =====
   var rng = mulberry32(42);
   for (var pi = 0; pi < 25; pi++) {
     var px = 40 + rng() * (W - 80);
     var py = 40 + rng() * (H - 80);
     var ps = 0.8 + rng() * 2;
     var pa = 0.15 + rng() * 0.45;
+    // 外层发光圆（较大、低透明度）
+    c.save();
+    c.globalAlpha = pa * 0.4;
+    c.fillStyle = '#ffd700';
+    c.beginPath(); c.arc(px, py, ps * 3, 0, Math.PI*2); c.fill();
+    c.restore();
+    // 中层发光圆
+    c.save();
+    c.globalAlpha = pa * 0.6;
+    c.fillStyle = '#ffd700';
+    c.beginPath(); c.arc(px, py, ps * 1.8, 0, Math.PI*2); c.fill();
+    c.restore();
+    // 核心清晰点
     c.save();
     c.globalAlpha = pa;
     c.fillStyle = '#ffd700';
-    c.shadowColor = 'rgba(255,215,0,0.8)';
-    c.shadowBlur = 8;
     c.beginPath(); c.arc(px, py, ps, 0, Math.PI*2); c.fill();
     c.restore();
   }
@@ -4255,54 +4293,68 @@ function saveCertificateCanvas() {
   c.fillText('HAPPY BIRTHDAY', 0, 55);
   c.restore();
 
-  // ===== 9. 星标 Emblem =====
+  // ===== 9. 星标 Emblem（3层：大字低透明度 → 中字 → 小字清晰） =====
   c.save();
   c.textAlign = 'center';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.9)';
-  c.shadowBlur = 30;
+  // 第1层：大字低透明度（模拟远距离光晕）
+  c.globalAlpha = 0.15;
+  c.font = '50px serif';
+  c.fillText('\u2726', W/2, 80);
+  // 第2层：中字中透明度
+  c.globalAlpha = 0.25;
+  c.font = '44px serif';
+  c.fillText('\u2726', W/2, 80);
+  // 第3层：正常大小清晰
+  c.globalAlpha = 1.0;
   c.font = '38px serif';
-  c.fillText('✦', W/2, 80);
-  // 额外光晕层
-  c.globalAlpha = 0.3;
-  c.shadowBlur = 60;
-  c.fillText('✦', W/2, 80);
+  c.fillText('\u2726', W/2, 80);
   c.restore();
 
-  // ===== 10. 标题 =====
+  // ===== 10. 标题（2层：大字低透明度 + 正常字清晰） =====
   c.save();
   c.textAlign = 'center';
-  c.font = '900 26px Orbitron, sans-serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.8)';
-  c.shadowBlur = 18;
-  c.fillText('生日纪念证书', W/2, 118);
-  c.shadowBlur = 35;
+  // 第1层：大字低透明度（模拟发光）
   c.globalAlpha = 0.3;
-  c.fillText('生日纪念证书', W/2, 118);
+  c.font = '900 28px Orbitron, sans-serif';
+  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', W/2, 118);
+  // 第2层：正常大小清晰
+  c.globalAlpha = 1.0;
+  c.font = '900 26px Orbitron, sans-serif';
+  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', W/2, 118);
   c.restore();
 
-  // ===== 11. 英文副标题 =====
+  // ===== 11. 英文副标题（color + globalAlpha，无 shadowBlur） =====
   c.save();
   c.textAlign = 'center';
   c.font = '500 10px "JetBrains Mono", monospace';
-  c.fillStyle = 'rgba(179,136,255,0.85)';
-  c.shadowColor = 'rgba(176,102,255,0.5)';
-  c.shadowBlur = 10;
+  c.globalAlpha = 0.85;
+  c.fillStyle = '#b388ff';
   c.fillText('BIRTHDAY COMMEMORATION', W/2, 138);
   c.restore();
 
-  // ===== 12. 钻石装饰 =====
-  c.save();
-  c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.7)';
-  c.shadowBlur = 8;
-  drawDiamond(c, W/2-16, 150, 5, '#ffd700');
-  drawDiamond(c, W/2, 152, 3, '#ffd700');
-  drawDiamond(c, W/2+16, 150, 5, '#ffd700');
-  c.restore();
+  // ===== 12. 钻石装饰（多层绘制模拟发光） =====
+  // 先画外层发光（用 radialGradient 圆点在钻石位置）
+  var diamondPositions = [[W/2-16, 150, 5],[W/2, 152, 3],[W/2+16, 150, 5]];
+  for (var di = 0; di < diamondPositions.length; di++) {
+    var dp = diamondPositions[di];
+    // 发光层
+    c.save();
+    var dg = c.createRadialGradient(dp[0], dp[1], 0, dp[0], dp[1], dp[2]*4);
+    dg.addColorStop(0, 'rgba(255,215,0,0.25)');
+    dg.addColorStop(1, 'transparent');
+    c.fillStyle = dg;
+    c.beginPath(); c.arc(dp[0], dp[1], dp[2]*4, 0, Math.PI*2); c.fill();
+    c.restore();
+    // 实体钻石
+    c.save();
+    c.fillStyle = '#ffd700';
+    drawDiamond(c, dp[0], dp[1], dp[2], '#ffd700');
+    c.restore();
+  }
 
-  // ===== 13. 分隔线1 =====
+  // ===== 13. 分隔线1（渐变线 + 2层分隔符 ✧） =====
   var div1 = c.createLinearGradient(W*0.12, 0, W*0.88, 0);
   div1.addColorStop(0, 'transparent');
   div1.addColorStop(0.15, 'rgba(255,215,0,0.15)');
@@ -4313,47 +4365,55 @@ function saveCertificateCanvas() {
   div1.addColorStop(1, 'transparent');
   c.strokeStyle = div1; c.lineWidth = 1;
   c.beginPath(); c.moveTo(W*0.12, 168); c.lineTo(W*0.88, 168); c.stroke();
+  // 分隔符 ✧（2层：底层宽线低透明度 + 顶层细线）
   c.save();
   c.textAlign = 'center';
-  c.font = '14px serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.5)';
-  c.shadowBlur = 6;
-  c.fillText('✧', W/2, 173);
+  // 底层发光
+  c.globalAlpha = 0.3;
+  c.font = '18px serif';
+  c.fillText('\u2727', W/2, 173);
+  // 顶层清晰
+  c.globalAlpha = 0.8;
+  c.font = '14px serif';
+  c.fillText('\u2727', W/2, 173);
   c.restore();
 
-  // ===== 14. "兹证明" =====
+  // ===== 14. "兹证明"（无 shadowBlur，纯色绘制） =====
   c.save();
   c.textAlign = 'center';
   c.font = '500 17px "Rajdhani", sans-serif';
-  c.fillStyle = 'rgba(255,255,255,0.8)';
-  c.shadowColor = 'rgba(255,255,255,0.2)';
-  c.shadowBlur = 4;
-  c.fillText('兹证明', W/2, 210);
+  c.globalAlpha = 0.8;
+  c.fillStyle = '#ffffff';
+  c.fillText('\u5179\u8BC1\u660E', W/2, 210);
   c.restore();
 
-  // ===== 15. 名字 =====
+  // ===== 15. 名字（2层：大字低透明度 + 正常字清晰） =====
   c.save();
   c.textAlign = 'center';
-  c.font = '900 36px Orbitron, sans-serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,107,157,0.6)';
-  c.shadowBlur = 18;
-  c.fillText('张慧艳', W/2, 255);
-  c.shadowColor = 'rgba(255,215,0,0.5)';
-  c.shadowBlur = 35;
+  // 第1层：大字低透明度（模拟发光）
   c.globalAlpha = 0.3;
-  c.fillText('张慧艳', W/2, 255);
+  c.font = '900 38px Orbitron, sans-serif';
+  c.fillText('\u5F20\u6167\u8273', W/2, 255);
+  // 第2层：正常大小清晰
+  c.globalAlpha = 1.0;
+  c.font = '900 36px Orbitron, sans-serif';
+  c.fillText('\u5F20\u6167\u8273', W/2, 255);
   c.restore();
 
-  // ===== 16. 日期 =====
+  // ===== 16. 日期（多层绘制模拟发光） =====
   c.save();
   c.textAlign = 'center';
-  c.font = '700 15px "Rajdhani", sans-serif';
   c.fillStyle = '#ffd700';
-  c.shadowColor = 'rgba(255,215,0,0.4)';
-  c.shadowBlur = 8;
-  c.fillText('于 2026年8月10日 迎来 19 岁生日', W/2, 292);
+  // 底层发光
+  c.globalAlpha = 0.2;
+  c.font = '700 17px "Rajdhani", sans-serif';
+  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', W/2, 292);
+  // 顶层清晰
+  c.globalAlpha = 1.0;
+  c.font = '700 15px "Rajdhani", sans-serif';
+  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', W/2, 292);
   c.restore();
 
   // ===== 17. 分隔线2 =====
@@ -4361,21 +4421,30 @@ function saveCertificateCanvas() {
   c.strokeStyle = div1; c.lineWidth = 1;
   c.beginPath(); c.moveTo(W*0.12, 314); c.lineTo(W*0.88, 314); c.stroke();
   c.textAlign = 'center';
-  c.font = '14px serif';
   c.fillStyle = 'rgba(255,107,157,0.6)';
-  c.shadowColor = 'rgba(255,107,157,0.4)';
-  c.shadowBlur = 6;
-  c.fillText('♡', W/2, 319);
+  // 底层发光
+  c.globalAlpha = 0.3;
+  c.font = '18px serif';
+  c.fillText('\u2661', W/2, 319);
+  // 顶层清晰
+  c.globalAlpha = 0.6;
+  c.font = '14px serif';
+  c.fillText('\u2661', W/2, 319);
   c.restore();
 
-  // ===== 18. 愿望 =====
+  // ===== 18. 愿望（多层文字模拟发光） =====
   c.save();
   c.textAlign = 'center';
-  c.font = 'italic 14px "Rajdhani", sans-serif';
+  var wish = ritualWishText || '\u613F\u524D\u7A0B\u4F3C\u9526\uFF0C\u4E07\u4E8B\u987A\u9042';
+  // 底层发光
+  c.font = 'italic 16px "Rajdhani", sans-serif';
+  c.globalAlpha = 0.2;
   c.fillStyle = '#b388ff';
-  c.shadowColor = 'rgba(176,102,255,0.5)';
-  c.shadowBlur = 12;
-  var wish = ritualWishText || '愿前程似锦，万事顺遂';
+  wrapText(c, '"' + wish + '"', W/2, 350, W - 90, 24);
+  // 顶层清晰
+  c.font = 'italic 14px "Rajdhani", sans-serif';
+  c.globalAlpha = 1.0;
+  c.fillStyle = '#b388ff';
   wrapText(c, '"' + wish + '"', W/2, 350, W - 90, 24);
   c.restore();
 
@@ -4391,18 +4460,21 @@ function saveCertificateCanvas() {
   c.fillText('WITNESS SIGNATURE', 60, 710);
   c.font = '400 11px sans-serif';
   c.fillStyle = 'rgba(255,255,255,0.35)';
-  c.fillText('见证签名', 60, 726);
+  c.fillText('\u89C1\u8BC1\u7B7E\u540D', 60, 726);
   c.restore();
   var signCanvas = document.getElementById('signPad');
   if (signCanvas) {
     c.save();
-    c.shadowColor = 'rgba(255,215,0,0.2)';
-    c.shadowBlur = 4;
+    // 用半透明底衬模拟签名区域发光
+    c.globalAlpha = 0.15;
+    c.fillStyle = 'rgba(255,215,0,1)';
+    c.fillRect(58, 733, 204, 74);
+    c.globalAlpha = 1.0;
     c.drawImage(signCanvas, 60, 735, 200, 70);
     c.restore();
   }
 
-  // ===== 21. 印章 =====
+  // ===== 21. 印章（多层绘制，无 shadowBlur） =====
   c.save();
   c.translate(W - 90, 745);
   c.rotate(-0.2);
@@ -4418,22 +4490,42 @@ function saveCertificateCanvas() {
   c.setLineDash([3, 3]);
   c.beginPath(); c.arc(0, 0, 40, 0, Math.PI*2); c.stroke();
   c.setLineDash([]);
-  // 主体圆圈
+  // 主体圆圈（2层：外层宽线低透明度 + 内层细线高透明度）
+  // 外层发光
+  c.save();
+  c.strokeStyle = 'rgba(255,107,157,1)';
+  c.lineWidth = 5;
+  c.globalAlpha = 0.3;
+  c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.stroke();
+  c.restore();
+  // 内层清晰
+  c.save();
   c.strokeStyle = 'rgba(255,107,157,0.85)';
   c.lineWidth = 2.5;
-  c.shadowColor = 'rgba(255,107,157,0.7)';
-  c.shadowBlur = 20;
+  c.globalAlpha = 0.85;
   c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.stroke();
-  c.shadowBlur = 0;
-  // 文字
+  c.restore();
+  // 文字（底层发光 + 顶层清晰）
+  // 底层发光
+  c.save();
+  c.globalAlpha = 0.25;
+  c.fillStyle = '#ff6b9d';
+  c.font = '900 16px sans-serif';
+  c.textAlign = 'center';
+  c.fillText('19', 0, -2);
+  c.font = '700 13px sans-serif';
+  c.fillText('\u751F\u65E5', 0, 16);
+  c.restore();
+  // 顶层清晰
+  c.save();
+  c.globalAlpha = 1.0;
   c.fillStyle = '#ff6b9d';
   c.font = '900 14px sans-serif';
   c.textAlign = 'center';
-  c.shadowColor = 'rgba(255,107,157,0.4)';
-  c.shadowBlur = 6;
   c.fillText('19', 0, -2);
   c.font = '600 11px sans-serif';
-  c.fillText('生日', 0, 16);
+  c.fillText('\u751F\u65E5', 0, 16);
+  c.restore();
   c.restore();
 
   // ===== 22. 序列号 =====
