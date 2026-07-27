@@ -4077,8 +4077,137 @@ async function submitWishToBackend() {
 }
 
 function saveCertificateAsImage() {
-  // 直接使用 Canvas 手绘方案（瞬间完成，无卡顿，无底纹问题）
-  saveCertificateFallback();
+  const certCard = document.getElementById('certCard');
+  if (!certCard) return;
+  // 暂停所有动画，确保截图稳定
+  certCard.style.animation = 'none';
+  certCard.querySelectorAll('*').forEach(function(el) {
+    el.style.animationPlayState = 'paused';
+  });
+  // 把伪元素效果固化到真实元素中（html2canvas 不支持伪元素）
+  var holoBorder = certCard.querySelector('.cert-holo-border');
+  if (holoBorder) {
+    holoBorder.style.position = 'absolute';
+    holoBorder.style.inset = '0';
+    holoBorder.style.borderRadius = '20px';
+    holoBorder.style.overflow = 'hidden';
+    holoBorder.style.pointerEvents = 'none';
+    holoBorder.style.zIndex = '2';
+    // 创建真实元素替代 ::before（全息旋转光效）
+    var holoBefore = holoBorder.querySelector('.holo-real-before');
+    if (!holoBefore) {
+      holoBefore = document.createElement('div');
+      holoBefore.className = 'holo-real-before';
+      holoBefore.style.cssText = 'position:absolute;inset:-2px;border-radius:20px;opacity:0.5;background:conic-gradient(from 30deg,#ffd700,#ff6b9d,#e040fb,#b388ff,#00ff88,#ffd700);';
+      holoBorder.appendChild(holoBefore);
+    }
+    // 创建真实元素替代 ::after（内部遮罩）
+    var holoAfter = holoBorder.querySelector('.holo-real-after');
+    if (!holoAfter) {
+      holoAfter = document.createElement('div');
+      holoAfter.className = 'holo-real-after';
+      holoAfter.style.cssText = 'position:absolute;inset:2px;border-radius:18px;background:linear-gradient(160deg,rgba(40,20,60,0.95),rgba(15,10,30,0.98));';
+      holoBorder.appendChild(holoAfter);
+    }
+  }
+  // 固化 cert-card::before 水印
+  var realWatermark = certCard.querySelector('.real-watermark');
+  if (!realWatermark) {
+    realWatermark = document.createElement('div');
+    realWatermark.className = 'real-watermark';
+    realWatermark.textContent = 'HAPPY BIRTHDAY';
+    realWatermark.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-family:Orbitron,sans-serif;font-size:52px;font-weight:900;letter-spacing:10px;color:rgba(255,215,0,0.04);white-space:nowrap;pointer-events:none;z-index:1;';
+    certCard.appendChild(realWatermark);
+  }
+  // 固化 cert-card::after 顶部光晕
+  var realTopGlow = certCard.querySelector('.real-top-glow');
+  if (!realTopGlow) {
+    realTopGlow = document.createElement('div');
+    realTopGlow.className = 'real-top-glow';
+    realTopGlow.style.cssText = 'position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:260px;height:120px;background:radial-gradient(ellipse,rgba(255,107,157,0.25),rgba(255,215,0,0.1),transparent);pointer-events:none;z-index:1;';
+    certCard.appendChild(realTopGlow);
+  }
+  // 固化 cert-border 伪元素角标
+  var certBorder = certCard.querySelector('.cert-border');
+  if (certBorder) {
+    var cornerTL = certBorder.querySelector('.corner-tl');
+    if (!cornerTL) {
+      cornerTL = document.createElement('div');
+      cornerTL.className = 'corner-tl';
+      cornerTL.style.cssText = 'position:absolute;top:-2px;left:-2px;width:32px;height:32px;border:2px solid #ffd700;border-right:none;border-bottom:none;border-radius:14px 0 0 0;box-shadow:0 0 8px rgba(255,215,0,0.3);';
+      certBorder.appendChild(cornerTL);
+    }
+    var cornerBR = certBorder.querySelector('.corner-br');
+    if (!cornerBR) {
+      cornerBR = document.createElement('div');
+      cornerBR.className = 'corner-br';
+      cornerBR.style.cssText = 'position:absolute;bottom:-2px;right:-2px;width:32px;height:32px;border:2px solid #ffd700;border-left:none;border-top:none;border-radius:0 0 14px 0;box-shadow:0 0 8px rgba(255,215,0,0.3);';
+      certBorder.appendChild(cornerBR);
+    }
+  }
+  // cert-card::before 和 ::after 用 overflow:hidden 隐藏
+  certCard.style.overflow = 'hidden';
+  // 给浏览器一帧时间应用
+  requestAnimationFrame(function() {
+    if (typeof html2canvas === 'function') {
+      html2canvas(certCard, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+        allowTaint: true,
+        onclone: function(clonedDoc) {
+          var cloned = clonedDoc.getElementById('certCard');
+          if (cloned) {
+            cloned.style.animation = 'none';
+            cloned.style.overflow = 'hidden';
+            cloned.querySelectorAll('*').forEach(function(el) {
+              el.style.animation = 'none';
+              el.style.transition = 'none';
+            });
+          }
+        }
+      }).then(function(canvas) {
+        var dataURL = canvas.toDataURL('image/png');
+        doSaveCertImage(dataURL);
+        // 恢复动画
+        certCard.style.animation = '';
+        certCard.style.overflow = '';
+      }).catch(function() {
+        saveCertificateFallback();
+        certCard.style.animation = '';
+        certCard.style.overflow = '';
+      });
+    } else {
+      saveCertificateFallback();
+    }
+  });
+}
+
+function doSaveCertImage(dataURL) {
+  var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  if (isWeChat) {
+    showSaveOverlay(dataURL);
+  } else {
+    var cv = document.createElement('canvas');
+    var img = new Image();
+    img.onload = function() {
+      cv.width = img.width; cv.height = img.height;
+      cv.getContext('2d').drawImage(img, 0, 0);
+      cv.toBlob(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.download = 'birthday_certificate_zhanghuiyan.png';
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      }, 'image/png');
+    };
+    img.src = dataURL;
+  }
+  playDecryptSuccess();
 }
 
 // 高保真 Canvas 手绘证书（1:1 还原网页视觉效果）
