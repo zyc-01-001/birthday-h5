@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>愿望管理后台</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --pink:#ff6b9d;--purple:#e040fb;--lavender:#b388ff;--gold:#ffd700;
+  --bg:#0d0a1a;--card:rgba(20,15,40,0.95);
+}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:#fff;min-height:100vh;padding:20px;
+}
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 50%,rgba(224,64,251,0.06) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 20%,rgba(255,107,157,0.06) 0%,transparent 50%),
+    var(--bg);
+  pointer-events:none;
+}
+
+.container{max-width:800px;margin:0 auto;position:relative;z-index:1;}
+
+/* Header */
+.header{
+  text-align:center;padding:40px 20px 30px;
+  border-bottom:1px solid rgba(255,215,0,0.15);margin-bottom:30px;
+}
+.header h1{
+  font-size:28px;font-weight:800;
+  background:linear-gradient(135deg,#ffd700,#ff6b9d,#b388ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;letter-spacing:3px;
+}
+.header p{color:rgba(255,255,255,0.5);font-size:13px;margin-top:8px;letter-spacing:1px;}
+
+/* Stats */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;
+}
+.stat-card{
+  background:var(--card);border:1px solid rgba(255,215,0,0.1);border-radius:12px;
+  padding:20px;text-align:center;
+  backdrop-filter:blur(10px);
+}
+.stat-num{
+  font-size:36px;font-weight:900;
+  background:linear-gradient(135deg,#ffd700,#ff6b9d);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.stat-label{color:rgba(255,255,255,0.5);font-size:12px;margin-top:4px;letter-spacing:1px;}
+
+/* Actions */
+.actions{
+  display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;
+}
+.btn{
+  padding:10px 20px;border:none;border-radius:8px;font-size:14px;
+  cursor:pointer;transition:all .3s;font-weight:600;letter-spacing:1px;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#ffd700,#ff6b9d);color:#0d0a1a;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,215,0,0.4);}
+.btn-secondary{
+  background:transparent;border:1px solid rgba(255,107,157,0.4);color:#ff8fb4;
+}
+.btn-secondary:hover{border-color:#ff6b9d;background:rgba(255,107,157,0.1);}
+.btn-danger{
+  background:transparent;border:1px solid rgba(255,68,68,0.4);color:#ff6b6b;
+}
+.btn-danger:hover{border-color:#ff4444;background:rgba(255,68,68,0.1);}
+
+/* Setup Panel */
+.setup-panel{
+  background:var(--card);border:1px solid rgba(255,215,0,0.15);border-radius:12px;
+  padding:24px;margin-bottom:24px;display:none;
+}
+.setup-panel.show{display:block;}
+.setup-panel h3{
+  font-size:16px;color:#ffd700;margin-bottom:16px;letter-spacing:1px;
+}
+.form-group{margin-bottom:16px;}
+.form-group label{
+  display:block;font-size:12px;color:rgba(255,255,255,0.6);
+  margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;
+}
+.form-group input{
+  width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,215,0,0.2);border-radius:8px;
+  color:#fff;font-size:14px;outline:none;transition:border-color .3s;
+}
+.form-group input:focus{border-color:rgba(255,215,0,0.5);}
+.form-group input::placeholder{color:rgba(255,255,255,0.25);}
+.form-hint{font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5;}
+
+/* Wish List */
+.wish-list{display:flex;flex-direction:column;gap:12px;}
+.wish-card{
+  background:var(--card);border:1px solid rgba(255,215,0,0.1);border-radius:12px;
+  padding:20px;position:relative;overflow:hidden;
+  transition:all .3s;
+}
+.wish-card:hover{border-color:rgba(255,215,0,0.25);transform:translateX(4px);}
+.wish-card::before{
+  content:'';position:absolute;left:0;top:0;width:3px;height:100%;
+  background:linear-gradient(180deg,#ffd700,#ff6b9d);border-radius:3px 0 0 3px;
+}
+.wish-content{
+  font-size:18px;font-weight:600;line-height:1.6;
+  background:linear-gradient(135deg,#ffd700,#fff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:12px;
+}
+.wish-meta{
+  display:flex;gap:16px;font-size:12px;color:rgba(255,255,255,0.4);
+}
+.wish-meta span{display:flex;align-items:center;gap:4px;}
+.wish-id{
+  position:absolute;top:12px;right:16px;
+  font-family:monospace;font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:1px;
+}
+
+/* Empty state */
+.empty-state{
+  text-align:center;padding:60px 20px;color:rgba(255,255,255,0.3);
+}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:0.3;}
+.empty-state p{font-size:14px;line-height:1.8;}
+
+/* Toast */
+.toast{
+  position:fixed;top:20px;right:20px;z-index:9999;
+  padding:12px 20px;border-radius:8px;font-size:14px;
+  background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);
+  color:#00ff88;transform:translateX(120%);transition:transform .3s;
+}
+.toast.show{transform:translateX(0);}
+.toast.error{background:rgba(255,68,68,0.15);border-color:rgba(255,68,68,0.3);color:#ff6b6b;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.2);border-radius:3px;}
+
+/* Mobile */
+@media(max-width:600px){
+  .stats{grid-template-columns:1fr;}
+  .wish-content{font-size:16px;}
+  .header h1{font-size:22px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>WISH MANAGEMENT</h1>
+    <p>愿望收集管理后台 / Birthday H5 Wishes Dashboard</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="totalCount">0</div>
+      <div class="stat-label">总愿望数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="localCount">0</div>
+      <div class="stat-label">本地存储</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="syncStatus">--</div>
+      <div class="stat-label">云端同步</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="refreshWishes()">刷新愿望列表</button>
+    <button class="btn btn-secondary" onclick="toggleSetup()">云端配置</button>
+    <button class="btn btn-secondary" onclick="exportWishes()">导出数据</button>
+    <button class="btn btn-danger" onclick="clearLocalWishes()">清空本地数据</button>
+  </div>
+
+  <div class="setup-panel" id="setupPanel">
+    <h3>JSONBin.io 云端同步配置</h3>
+    <div class="form-group">
+      <label>API Key (X-Master-Key)</label>
+      <input type="text" id="apiKeyInput" placeholder="$2a$10$...">
+      <div class="form-hint">在 jsonbin.io 注册后获取 API Key</div>
+    </div>
+    <div class="form-group">
+      <label>Bin ID</label>
+      <input type="text" id="binIdInput" placeholder="创建 Bin 后填入 ID">
+      <div class="form-hint">在 jsonbin.io 创建一个空的 JSON Bin，复制其 ID</div>
+    </div>
+    <div class="actions" style="margin-bottom:0;">
+      <button class="btn btn-primary" onclick="testConnection()">测试连接</button>
+      <button class="btn btn-secondary" onclick="syncToCloud()">同步到云端</button>
+      <button class="btn btn-secondary" onclick="syncFromCloud()">从云端拉取</button>
+    </div>
+  </div>
+
+  <div class="wish-list" id="wishList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_KEY_STORAGE = 'wish_api_key';
+const BIN_ID_STORAGE = 'wish_bin_id';
+const WISHES_STORAGE = 'birthday_wishes';
+
+// 显示提示
+function showToast(msg, isError) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => toast.className = 'toast', 3000);
+}
+
+// 切换配置面板
+function toggleSetup() {
+  const panel = document.getElementById('setupPanel');
+  panel.classList.toggle('show');
+  // 加载已保存的配置
+  document.getElementById('apiKeyInput').value = localStorage.getItem(API_KEY_STORAGE) || '';
+  document.getElementById('binIdInput').value = localStorage.getItem(BIN_ID_STORAGE) || '';
+}
+
+// 获取愿望列表
+function getLocalWishes() {
+  return JSON.parse(localStorage.getItem(WISHES_STORAGE) || '[]');
+}
+
+// 刷新显示
+function refreshWishes() {
+  const wishes = getLocalWishes();
+  const list = document.getElementById('wishList');
+
+  document.getElementById('totalCount').textContent = wishes.length;
+  document.getElementById('localCount').textContent = wishes.length;
+
+  // 检查云端状态
+  const binId = localStorage.getItem(BIN_ID_STORAGE);
+  document.getElementById('syncStatus').textContent = binId ? '已配置' : '未配置';
+
+  if (wishes.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#9733;</div><p>暂无愿望数据<br>当有人完成生日 H5 页面的许愿仪式后<br>愿望将显示在这里</p></div>';
+    return;
+  }
+
+  // 按时间倒序排列
+  wishes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  list.innerHTML = wishes.map(w => {
+    const time = new Date(w.timestamp);
+    const timeStr = time.toLocaleString('zh-CN', {
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',second:'2-digit'
+    });
+    return '<div class="wish-card">' +
+      '<div class="wish-id">' + (w.id || '--') + '</div>' +
+      '<div class="wish-content">"' + escapeHtml(w.wish) + '"</div>' +
+      '<div class="wish-meta">' +
+        '<span>&#128337; ' + timeStr + '</span>' +
+        '<span>&#9733; ID: ' + (w.id || '--').substr(0,8) + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  showToast('已加载 ' + wishes.length + ' 条愿望');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 测试 JSONBin 连接
+async function testConnection() {
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const binId = document.getElementById('binIdInput').value.trim();
+
+  if (!apiKey || !binId) {
+    showToast('请填写 API Key 和 Bin ID', true);
+    return;
+  }
+
+  localStorage.setItem(API_KEY_STORAGE, apiKey);
+  localStorage.setItem(BIN_ID_STORAGE, binId);
+
+  try {
+    const resp = await fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', {
+      headers: { 'X-Master-Key': apiKey }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      showToast('连接成功！Bin 中已有 ' + (Array.isArray(data.record) ? data.record.length : 0) + ' 条数据');
+      refreshWishes();
+    } else {
+      const errData = await resp.json().catch(() => ({}));
+      showToast('连接失败: ' + (errData.message || resp.status), true);
+    }
+  } catch (e) {
+    showToast('网络错误: ' + e.message, true);
+  }
+}
+
+// 同步到云端
+async function syncToCloud() {
+  const apiKey = localStorage.getItem(API_KEY_STORAGE);
+  const binId = localStorage.getItem(BIN_ID_STORAGE);
+  const wishes = getLocalWishes();
+
+  if (!apiKey || !binId) {
+    showToast('请先配置云端连接', true);
+    toggleSetup();
+    return;
+  }
+
+  try {
+    const resp = await fetch('https://api.jsonbin.io/v3/b/' + binId, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': apiKey
+      },
+      body: JSON.stringify(wishes)
+    });
+    if (resp.ok) {
+      showToast('已同步 ' + wishes.length + ' 条愿望到云端');
+      refreshWishes();
+    } else {
+      showToast('同步失败', true);
+    }
+  } catch (e) {
+    showToast('网络错误', true);
+  }
+}
+
+// 从云端拉取
+async function syncFromCloud() {
+  const apiKey = localStorage.getItem(API_KEY_STORAGE);
+  const binId = localStorage.getItem(BIN_ID_STORAGE);
+
+  if (!apiKey || !binId) {
+    showToast('请先配置云端连接', true);
+    toggleSetup();
+    return;
+  }
+
+  try {
+    const resp = await fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', {
+      headers: { 'X-Master-Key': apiKey }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const cloudWishes = Array.isArray(data.record) ? data.record : [];
+      localStorage.setItem(WISHES_STORAGE, JSON.stringify(cloudWishes));
+      showToast('已从云端拉取 ' + cloudWishes.length + ' 条愿望');
+      refreshWishes();
+    } else {
+      showToast('拉取失败', true);
+    }
+  } catch (e) {
+    showToast('网络错误', true);
+  }
+}
+
+// 导出数据
+function exportWishes() {
+  const wishes = getLocalWishes();
+  if (wishes.length === 0) {
+    showToast('暂无数据可导出', true);
+    return;
+  }
+  const json = JSON.stringify(wishes, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'birthday_wishes_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据已导出为 JSON 文件');
+}
+
+// 清空本地数据
+function clearLocalWishes() {
+  if (!confirm('确定要清空所有本地愿望数据吗？')) return;
+  localStorage.removeItem(WISHES_STORAGE);
+  refreshWishes();
+  showToast('本地数据已清空');
+}
+
+// 初始化
+refreshWishes();
+</script>
+</body>
+</html>
