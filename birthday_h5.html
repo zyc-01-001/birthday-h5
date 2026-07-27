@@ -2132,7 +2132,7 @@ body::before{
 
 愿你眼里有光，心中有暖，
 前方有星河可奔赴。</p>
-            <div class="popup-signature">— DECRYPTED · <span>2023.08.10 → 2025.08.10</span> —</div>
+            <div class="popup-signature">— DECRYPTED · <span>2024.09.16 → 2026.08.10</span> —</div>
           </div>
         </div>
       </div>
@@ -2148,7 +2148,7 @@ body::before{
     <!-- 标题区 -->
     <div class="blessing-header">
       <div class="blessing-title">最终祝福</div>
-      <div class="blessing-subtitle">FINAL BLESSINGS · 2025.08.10</div>
+      <div class="blessing-subtitle">FINAL BLESSINGS · 2026.08.10</div>
       <div class="blessing-divider"><span></span><i>✦</i><span></span></div>
     </div>
 
@@ -2272,7 +2272,7 @@ body::before{
   <div class="wish-result" id="wishResult">
     <div class="wish-result-icon">🌟</div>
     <div class="wish-result-text" id="wishResultText"></div>
-    <div class="wish-result-sign">— WISH GRANTED · <span>2025.08.10</span> —</div>
+    <div class="wish-result-sign">— WISH GRANTED · <span>2026.08.10</span> —</div>
     <button class="ritual-next-btn" id="toRoseBtn">继续</button>
   </div>
 
@@ -2326,7 +2326,7 @@ body::before{
       <div class="cert-body">
         <div class="cert-line">兹证明</div>
         <div class="cert-name">张慧艳</div>
-        <div class="cert-line">于 <span class="cert-date">2025年8月10日</span> 迎来 <span class="cert-age">20</span> 岁生日</div>
+        <div class="cert-line">于 <span class="cert-date">2026年8月10日</span> 迎来 <span class="cert-age">19</span> 岁生日</div>
         <div class="cert-divider"><i>♡</i></div>
         <div class="cert-quote" id="certQuote"></div>
       </div>
@@ -2335,7 +2335,7 @@ body::before{
           <div class="cert-sign-label">见证签名</div>
           <img class="cert-sign-img" id="certSignImg" alt="signature">
         </div>
-        <div class="cert-seal">20<br>生日</div>
+        <div class="cert-seal">19<br>生日</div>
       </div>
       <div class="cert-serial" id="certSerial"></div>
     </div>
@@ -4353,7 +4353,7 @@ function saveCertificateCanvas() {
   c.fillStyle = '#ffd700';
   c.shadowColor = 'rgba(255,215,0,0.4)';
   c.shadowBlur = 8;
-  c.fillText('于 2025年8月10日 迎来 20 岁生日', W/2, 292);
+  c.fillText('于 2026年8月10日 迎来 19 岁生日', W/2, 292);
   c.restore();
 
   // ===== 17. 分隔线2 =====
@@ -4431,7 +4431,7 @@ function saveCertificateCanvas() {
   c.textAlign = 'center';
   c.shadowColor = 'rgba(255,107,157,0.4)';
   c.shadowBlur = 6;
-  c.fillText('20', 0, -2);
+  c.fillText('19', 0, -2);
   c.font = '600 11px sans-serif';
   c.fillText('生日', 0, 16);
   c.restore();
@@ -4446,12 +4446,21 @@ function saveCertificateCanvas() {
   c.restore();
 
   // ===== 输出 =====
-  var dataURL = cv.toDataURL('image/png');
+  var isMobile = /iPhone|iPad|iPod|Android|MicroMessenger/i.test(navigator.userAgent);
+  // 手机端用 3x 分辨率确保清晰
+  var outCV = cv;
+  if (isMobile) {
+    outCV = document.createElement('canvas');
+    outCV.width = W * 3; outCV.height = H * 3;
+    var oc = outCV.getContext('2d');
+    oc.drawImage(cv, 0, 0, W * 3, H * 3);
+  }
+  var dataURL = outCV.toDataURL('image/png', 1.0);
   var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
   if (isWeChat) {
     showSaveOverlay(dataURL);
   } else {
-    cv.toBlob(function(blob) {
+    outCV.toBlob(function(blob) {
       var url = URL.createObjectURL(blob);
       var link = document.createElement('a');
       link.download = 'birthday_certificate_zhanghuiyan.png';
