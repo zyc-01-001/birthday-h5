@@ -222,6 +222,53 @@ body::before{
 }
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
+/* 封印之门 - 装饰与文案 */
+.seal-aura{
+  position:absolute;top:50%;left:50%;width:360px;height:360px;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(255,107,157,0.12) 0%,rgba(255,215,0,0.06) 40%,transparent 70%);
+  border-radius:50%;pointer-events:none;
+  animation:sealAuraPulse 4s ease-in-out infinite;
+}
+@keyframes sealAuraPulse{
+  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.6;}
+  50%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}
+}
+.seal-header{
+  position:relative;z-index:2;text-align:center;margin-bottom:36px;
+  animation:sealFadeIn 1s ease 0.2s both;
+}
+.seal-eyebrow{
+  font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:5px;
+  color:var(--lavender);opacity:0.7;margin-bottom:8px;
+}
+.seal-title{
+  font-size:30px;font-weight:700;letter-spacing:6px;
+  background:linear-gradient(90deg,var(--pink),var(--gold),var(--pink));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 30px rgba(255,107,157,0.3);
+}
+.seal-subtitle{
+  font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:4px;
+  color:rgba(255,255,255,0.35);margin-top:6px;
+}
+.seal-divider{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-top:14px;
+}
+.seal-divider span{width:40px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,215,0,0.5),transparent);}
+.seal-divider i{color:var(--gold);font-size:12px;font-style:normal;}
+.seal-quote{
+  position:relative;z-index:2;
+  font-size:14px;color:rgba(255,255,255,0.5);letter-spacing:1px;
+  margin-top:28px;text-align:center;
+  animation:sealFadeIn 1s ease 0.5s both;
+}
+@keyframes sealFadeIn{
+  from{opacity:0;transform:translateY(12px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
 /* Envelope open particles burst */
 .burst-particle{
   position:absolute;border-radius:50%;pointer-events:none;
@@ -266,6 +313,48 @@ body::before{
 @keyframes textGlow{
   0%{text-shadow:none;}
   100%{text-shadow:0 0 20px rgba(255,215,0,0.4),0 0 40px rgba(255,107,157,0.2);}
+}
+
+/* 时光密语 - 标题与装饰 */
+.tw-header{
+  position:relative;z-index:2;text-align:center;margin-bottom:28px;
+  animation:sealFadeIn 1s ease 0.2s both;
+}
+.tw-eyebrow{
+  font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:5px;
+  color:var(--lavender);opacity:0.7;margin-bottom:8px;
+}
+.tw-title{
+  font-size:28px;font-weight:700;letter-spacing:6px;
+  background:linear-gradient(90deg,var(--lavender),var(--pink),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 30px rgba(179,136,255,0.3);
+}
+.tw-subtitle{
+  font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;
+  color:rgba(255,255,255,0.35);margin-top:6px;
+}
+.tw-divider{
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;
+}
+.tw-divider span{width:36px;height:1px;background:linear-gradient(90deg,transparent,rgba(179,136,255,0.5),transparent);}
+.tw-divider i{color:var(--lavender);font-size:12px;font-style:normal;}
+.tw-date-tag{
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;
+  color:var(--pink);opacity:0.6;margin-bottom:10px;
+}
+.tw-footer{
+  position:relative;z-index:2;text-align:center;margin-top:24px;
+  opacity:0;transition:opacity 1s ease;
+}
+.tw-footer.show{opacity:1;}
+.tw-footer-line{
+  width:60px;height:1px;margin:0 auto 14px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.tw-footer-text{
+  font-size:13px;color:rgba(255,255,255,0.45);letter-spacing:1px;
+  font-style:italic;
 }
 
 /* ===== 流星动画 ===== */
@@ -400,6 +489,21 @@ body::before{
   box-shadow:0 2px 4px rgba(0,0,0,0.4),inset 0 -1px 2px rgba(0,0,0,0.3);
   z-index:2;
 }
+/* 照片骨架占位 */
+.polaroid-skeleton{
+  background:linear-gradient(110deg,rgba(255,107,157,0.15) 30%,rgba(179,136,255,0.25) 50%,rgba(255,107,157,0.15) 70%);
+  background-size:200% 100%;
+  animation:skeletonShimmer 1.5s ease infinite;
+}
+@keyframes skeletonShimmer{
+  0%{background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
+.polaroid-skeleton::before{
+  content:'✦';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:rgba(255,215,0,0.3);font-size:20px;animation:blink 1.2s ease infinite;
+}
+.polaroid-fail::before{content:'🍁';}
 
 /* ===== 记忆星图（SVG星座连线） ===== */
 .star-map{
@@ -1591,6 +1695,13 @@ body::before{
 
   <!-- LEVEL 1: 封印之门 -->
   <div class="level-content active" id="level1">
+    <div class="seal-aura"></div>
+    <div class="seal-header">
+      <div class="seal-eyebrow">CHAPTER · 01</div>
+      <div class="seal-title">封印之门</div>
+      <div class="seal-subtitle">THE SEALED LETTER</div>
+      <div class="seal-divider"><span></span><i>✦</i><span></span></div>
+    </div>
     <div class="envelope-container" id="envelopeContainer">
       <div class="envelope" id="envelope">
         <div class="envelope-flap" id="envelopeFlap"></div>
@@ -1600,6 +1711,7 @@ body::before{
         <div class="envelope-particles" id="envelopeParticles"></div>
       </div>
     </div>
+    <div class="seal-quote">一封被时光封存的信，只等今天被你开启</div>
     <div class="tap-hint" id="tapHint">TAP TO UNSEAL</div>
   </div>
 
@@ -1622,8 +1734,20 @@ body::before{
     <!-- 装饰圆环 -->
     <div class="deco-ring r1"></div>
     <div class="deco-ring r2"></div>
+    <!-- 标题区 -->
+    <div class="tw-header">
+      <div class="tw-eyebrow">CHAPTER · 02</div>
+      <div class="tw-title">时光密语</div>
+      <div class="tw-subtitle">WHISPERS OF TIME · 2023—2025</div>
+      <div class="tw-divider"><span></span><i>✦</i><span></span></div>
+    </div>
     <div class="typewriter-box">
+      <div class="tw-date-tag">// MEMORY LOG</div>
       <div class="typewriter-text" id="typewriterText"><span class="cursor"></span></div>
+    </div>
+    <div class="tw-footer" id="twFooter">
+      <div class="tw-footer-line"></div>
+      <div class="tw-footer-text">两年的时间，足够把陌生人变成最珍贵的存在</div>
     </div>
   </div>
 
@@ -2439,7 +2563,10 @@ function initLevel2() {
     } else {
       // Done
       textEl.classList.add('done');
-      setTimeout(() => completeCurrentLevel(), 1500);
+      // 显示底部引言，延时进入下一关
+      const footer = document.getElementById('twFooter');
+      if (footer) footer.classList.add('show');
+      setTimeout(() => completeCurrentLevel(), 2800);
     }
   }
 
@@ -2480,8 +2607,8 @@ function initLevel3() {
     el.dataset.rot = p.rot;
     el.innerHTML = `
       <div class="polaroid-pin"></div>
-      <div class="polaroid-img">
-        <img src="${src}" alt="回忆 ${i + 1}" loading="lazy" decoding="async" onerror="this.style.display='none';">
+      <div class="polaroid-img polaroid-skeleton">
+        <img data-src="${src}" alt="回忆 ${i + 1}" decoding="async" onerror="this.parentElement.classList.add('polaroid-fail');this.style.display='none';">
       </div>
     `;
     // 点击放大置顶
@@ -2499,6 +2626,34 @@ function initLevel3() {
       el.style.opacity = '1';
     }, 200 + i * 150);
   });
+
+  // ===== 照片懒加载：进入视口才加载真实图片 =====
+  const lazyImgs = wall.querySelectorAll('img[data-src]');
+  if ('IntersectionObserver' in window) {
+    const imgObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          img.addEventListener('load', function() {
+            img.parentElement.classList.remove('polaroid-skeleton');
+          }, { once: true });
+          imgObserver.unobserve(img);
+        }
+      });
+    }, { rootMargin: '100px' });
+    lazyImgs.forEach(function(img) { imgObserver.observe(img); });
+  } else {
+    // 降级：直接加载
+    lazyImgs.forEach(function(img) {
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src');
+      img.addEventListener('load', function() {
+        img.parentElement.classList.remove('polaroid-skeleton');
+      }, { once: true });
+    });
+  }
 
   // ===== 记忆星图：SVG星座节点 + 连线 =====
   const svg = document.getElementById('starMapSvg');
@@ -3499,12 +3654,45 @@ function saveCertificateAsImage() {
   c.fillStyle = 'rgba(255,255,255,0.3)'; c.font = '12px monospace';
   c.fillText('— HAPPY BIRTHDAY ZHANG HUIYAN · 2025.08.10 —', W/2, H - 40);
 
-  // 下载
-  const link = document.createElement('a');
-  link.download = 'birthday_certificate_zhanghuiyan.png';
-  link.href = cv.toDataURL('image/png');
-  link.click();
+  // 保存到相册：优先用 Blob 下载，微信环境用长按保存浮层
+  const dataURL = cv.toDataURL('image/png');
+  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  if (isWeChat) {
+    // 微信内置浏览器拦截 download，弹出全屏图片供长按保存
+    showSaveOverlay(dataURL);
+  } else {
+    // 普通浏览器：用 Blob + download 属性直接下载
+    cv.toBlob(function(blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'birthday_certificate_zhanghuiyan.png';
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  }
   playDecryptSuccess();
+}
+
+// 长按保存浮层（微信环境）
+function showSaveOverlay(dataURL) {
+  // 移除已有浮层
+  const old = document.getElementById('saveOverlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'saveOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML =
+    '<div style="color:#ffd700;font-size:16px;letter-spacing:2px;margin-bottom:16px;text-align:center;">长按图片保存到相册</div>' +
+    '<img src="' + dataURL + '" style="max-width:85%;max-height:70vh;border-radius:12px;box-shadow:0 0 40px rgba(255,107,157,0.4);">' +
+    '<div style="color:rgba(255,255,255,0.5);font-size:13px;margin-top:18px;text-align:center;line-height:1.6;">长按上方图片，选择「保存图片」<br>即可保存到手机相册</div>' +
+    '<button id="closeSaveOverlay" style="margin-top:20px;padding:10px 32px;border:1px solid rgba(255,107,157,0.5);background:transparent;color:#ff8fb4;border-radius:24px;font-size:14px;cursor:pointer;">关闭</button>';
+  document.body.appendChild(overlay);
+  document.getElementById('closeSaveOverlay').addEventListener('click', function() {
+    overlay.remove();
+  });
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
