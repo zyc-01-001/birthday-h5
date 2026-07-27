@@ -1621,12 +1621,9 @@ body::before{
 }
 .cert-title{
   font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;
-  background:linear-gradient(135deg,#ffd700 0%,#fff 25%,#ff6b9d 50%,#ffd700 75%,#fff 100%);
-  background-size:300% 100%;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  color:#ffd700;
   letter-spacing:5px;margin:10px 0 6px;
-  animation:certTitleShimmer 4s ease infinite;
-  filter:drop-shadow(0 0 12px rgba(255,215,0,0.6));
+  text-shadow:0 0 12px rgba(255,215,0,0.6),0 0 24px rgba(255,215,0,0.3);
 }
 @keyframes certTitleShimmer{
   0%,100%{background-position:0% 50%;}
@@ -1662,12 +1659,9 @@ body::before{
 }
 .cert-name{
   font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;
-  background:linear-gradient(135deg,#ff6b9d 0%,#fff 20%,#ffd700 50%,#ff6b9d 80%,#fff 100%);
-  background-size:300% 100%;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  color:#ffd700;
   letter-spacing:10px;margin:12px 0;
-  animation:certTitleShimmer 4s ease infinite;
-  filter:drop-shadow(0 0 12px rgba(255,107,157,0.5));
+  text-shadow:0 0 12px rgba(255,107,157,0.5),0 0 24px rgba(255,215,0,0.3);
 }
 .cert-date,.cert-age{color:var(--gold);font-weight:700;text-shadow:0 0 6px rgba(255,215,0,0.3);}
 .cert-quote{
@@ -4183,14 +4177,10 @@ function saveCertificateFallback() {
 
   // 标题
   c.font = '900 26px Orbitron, sans-serif';
-  const titleGrad = c.createLinearGradient(W/2-120, 0, W/2+120, 0);
-  titleGrad.addColorStop(0, '#ffd700');
-  titleGrad.addColorStop(0.25, '#ffffff');
-  titleGrad.addColorStop(0.5, '#ff6b9d');
-  titleGrad.addColorStop(0.75, '#ffd700');
-  titleGrad.addColorStop(1, '#ffffff');
-  c.fillStyle = titleGrad;
+  c.fillStyle = '#ffd700';
+  c.shadowColor = 'rgba(255,215,0,0.6)'; c.shadowBlur = 12;
   c.fillText('生日纪念证书', W/2, 118);
+  c.shadowBlur = 0;
 
   // 英文副标题
   c.font = '500 10px monospace';
@@ -4222,13 +4212,7 @@ function saveCertificateFallback() {
 
   // 名字
   c.font = '900 34px Orbitron, sans-serif';
-  const nameGrad = c.createLinearGradient(W/2-100, 0, W/2+100, 0);
-  nameGrad.addColorStop(0, '#ff6b9d');
-  nameGrad.addColorStop(0.2, '#ffffff');
-  nameGrad.addColorStop(0.5, '#ffd700');
-  nameGrad.addColorStop(0.8, '#ff6b9d');
-  nameGrad.addColorStop(1, '#ffffff');
-  c.fillStyle = nameGrad;
+  c.fillStyle = '#ffd700';
   c.shadowColor = 'rgba(255,107,157,0.5)'; c.shadowBlur = 12;
   c.fillText('张慧艳', W/2, 252);
   c.shadowBlur = 0;
