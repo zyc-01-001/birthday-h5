@@ -508,7 +508,7 @@ body::before{
 /* ===== 记忆星图（SVG星座连线） ===== */
 .star-map{
   position:relative;z-index:2;flex-shrink:0;
-  width:100%;height:170px;margin-bottom:12px;
+  width:100%;height:140px;margin-bottom:12px;
   background:rgba(20,15,40,0.4);border:1px solid rgba(179,136,255,0.2);
   border-radius:12px;overflow:hidden;backdrop-filter:blur(8px);
 }
@@ -1129,13 +1129,13 @@ body::before{
   display:flex;gap:18px;z-index:3;
 }
 .age-candle{
-  position:relative;width:26px;height:90px;cursor:pointer;
+  position:relative;width:34px;height:90px;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;
   transition:transform .2s ease;
 }
 .age-candle:active{transform:scale(0.94);}
 .candle-stick{
-  width:10px;flex:1;
+  width:12px;flex:1;
   background:linear-gradient(180deg,#fff 0%,#ffd9e8 15%,#ff8fb4 100%);
   border-radius:4px 4px 2px 2px;
   box-shadow:inset -2px 0 0 rgba(0,0,0,0.1),0 0 6px rgba(255,143,180,0.4);
@@ -1147,20 +1147,26 @@ body::before{
   background:repeating-linear-gradient(180deg,transparent 0,transparent 6px,rgba(255,255,255,0.5) 6px,rgba(255,255,255,0.5) 8px);
   border-radius:inherit;
 }
+/* 数字直接做成火焰造型：大号发光数字 */
 .candle-num{
-  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-  font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;
-  color:rgba(255,255,255,0.9);text-shadow:0 0 4px rgba(255,107,157,0.8);
-  z-index:2;
+  position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+  font-family:'Orbitron',sans-serif;font-size:30px;font-weight:900;
+  background:linear-gradient(180deg,#fff 0%,#ffd700 40%,#ff6b00 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  text-shadow:0 0 12px rgba(255,170,0,0.8);
+  filter:drop-shadow(0 0 6px rgba(255,170,0,0.6));
+  z-index:3;line-height:1;
+  animation:flameFlicker .3s ease infinite alternate;
 }
 .candle-flame{
-  position:absolute;top:-16px;left:50%;transform:translateX(-50%);
-  width:12px;height:18px;
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  width:10px;height:14px;
   background:radial-gradient(ellipse at 50% 70%,#fff 0%,#ffd700 30%,#ff6b00 70%,transparent 100%);
   border-radius:50% 50% 30% 30%;
   filter:blur(0.5px);
   animation:flameFlicker .3s ease infinite alternate;
   box-shadow:0 0 12px rgba(255,170,0,0.8),0 0 24px rgba(255,107,0,0.4);
+  z-index:2;
 }
 .candle-flame::before{
   content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);
@@ -1174,6 +1180,7 @@ body::before{
   100%{transform:translateX(-50%) scale(0.95,1.05) rotate(3deg);opacity:0.9;}
 }
 .age-candle.blown .candle-flame{display:none;}
+.age-candle.blown .candle-num{display:none;}
 .age-candle.blown .candle-stick{
   background:linear-gradient(180deg,#bbb 0%,#999 100%);
   box-shadow:inset -2px 0 0 rgba(0,0,0,0.15);
@@ -1385,6 +1392,27 @@ body::before{
   width:300px;height:300px;max-width:80vw;max-height:50vh;
   cursor:pointer;
 }
+.rose-canvas-wrap{position:relative;display:inline-block;}
+.rose-tap-badge{
+  position:absolute;top:50%;right:-20px;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:linear-gradient(135deg,rgba(255,107,157,0.9),rgba(255,215,0,0.9));
+  padding:8px 10px;border-radius:18px;
+  box-shadow:0 4px 16px rgba(255,107,157,0.5),0 0 20px rgba(255,215,0,0.3);
+  animation:roseBadgeBob 1.2s ease infinite;
+  pointer-events:none;z-index:5;
+}
+.rose-tap-icon{font-size:20px;}
+.rose-tap-text{
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
+  color:#fff;letter-spacing:1px;text-shadow:0 1px 2px rgba(0,0,0,0.3);
+}
+@keyframes roseBadgeBob{
+  0%,100%{transform:translateY(-50%) translateX(0);}
+  50%{transform:translateY(-50%) translateX(-6px);}
+}
+.rose-tap-badge.hide{opacity:0;transition:opacity .4s ease;}
+@media(max-width:380px){.rose-tap-badge{right:-8px;}}
 .rose-message{
   font-family:'Rajdhani',sans-serif;font-size:14px;
   color:var(--gold);letter-spacing:1px;margin-top:8px;text-align:center;
@@ -1495,6 +1523,29 @@ body::before{
   box-shadow:0 0 12px rgba(255,107,157,0.3);
 }
 .cert-actions{display:flex;gap:14px;margin-top:24px;flex-wrap:wrap;justify-content:center;}
+/* 愿望偷看 */
+.wish-peek{display:flex;flex-direction:column;align-items:center;margin-top:16px;}
+.wish-peek-btn{
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;
+  color:rgba(255,255,255,0.5);background:transparent;
+  border:1px dashed rgba(255,107,157,0.3);padding:6px 20px;border-radius:20px;
+  cursor:pointer;transition:all .3s;letter-spacing:1px;
+}
+.wish-peek-btn:hover{color:var(--pink);border-color:var(--pink);}
+.wish-peek-btn.opened{display:none;}
+.wish-peek-content{
+  display:none;max-width:320px;text-align:center;
+  font-size:14px;color:var(--gold);font-style:italic;
+  padding:12px 16px;margin-top:8px;
+  background:rgba(255,107,157,0.08);border:1px solid rgba(255,215,0,0.15);
+  border-radius:12px;line-height:1.6;
+  animation:wishPeekIn .5s ease;
+}
+.wish-peek-content.show{display:block;}
+@keyframes wishPeekIn{
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
 .cert-save-btn{
   font-family:'Orbitron',sans-serif;font-size:12px;
   color:#0d0a1a;background:linear-gradient(135deg,var(--gold),var(--pink));
@@ -1772,7 +1823,7 @@ body::before{
     <!-- 记忆星图（SVG星座连线） -->
     <div class="star-map" id="starMap">
       <div class="star-map-title">// MEMORY CONSTELLATION</div>
-      <svg viewBox="0 0 320 170" preserveAspectRatio="none" id="starMapSvg">
+      <svg viewBox="0 0 380 110" preserveAspectRatio="xMidYMid meet" id="starMapSvg">
         <!-- 连线和节点由 JS 生成 -->
       </svg>
     </div>
@@ -2034,7 +2085,13 @@ body::before{
   <div class="rose-stage" id="roseStage">
     <div class="rose-title">玫瑰为你绽放</div>
     <div class="rose-subtitle">A ROSE FOR YOU · 20</div>
-    <canvas class="rose-canvas" id="roseCanvas"></canvas>
+    <div class="rose-canvas-wrap">
+      <canvas class="rose-canvas" id="roseCanvas"></canvas>
+      <div class="rose-tap-badge" id="roseTapBadge">
+        <span class="rose-tap-icon">👆</span>
+        <span class="rose-tap-text">戳花朵</span>
+      </div>
+    </div>
     <div class="rose-message" id="roseMessage">点击花朵，让花瓣飘散</div>
     <button class="ritual-next-btn" id="toSignBtn">继续</button>
   </div>
@@ -2079,6 +2136,10 @@ body::before{
     <div class="cert-actions">
       <button class="cert-save-btn" id="certSaveBtn">保存纪念卡</button>
       <button class="ritual-close-btn" id="certCloseBtn">完成仪式</button>
+    </div>
+    <div class="wish-peek" id="wishPeek">
+      <div class="wish-peek-btn" id="wishPeekBtn">偷看愿望 🤫</div>
+      <div class="wish-peek-content" id="wishPeekContent"></div>
     </div>
   </div>
 </div>
@@ -2657,14 +2718,14 @@ function initLevel3() {
 
   // ===== 记忆星图：SVG星座节点 + 连线 =====
   const svg = document.getElementById('starMapSvg');
-  // 均匀分布 x 间距，对称波形 y，避免中间挤在一起
+  // 等间距水平排列，标签在下方
   const nodes = [
-    { x: 30,  y: 50, label: '初遇' },
-    { x: 84,  y: 35, label: '同行' },
-    { x: 138, y: 60, label: '默契' },
-    { x: 192, y: 35, label: '此刻' },
-    { x: 246, y: 55, label: '未来' },
-    { x: 300, y: 40, label: '∞' },
+    { x: 40,  y: 70, label: '初遇' },
+    { x: 100, y: 70, label: '同行' },
+    { x: 160, y: 70, label: '默契' },
+    { x: 220, y: 70, label: '此刻' },
+    { x: 280, y: 70, label: '未来' },
+    { x: 340, y: 70, label: '∞' },
   ];
   // 连线
   let linkStr = '';
@@ -3473,6 +3534,9 @@ function startRoseBloom() {
       });
     }
     roseBloomed = true;
+    // 点击后隐藏"戳花朵"提示
+    const badge = document.getElementById('roseTapBadge');
+    if (badge) badge.classList.add('hide');
   }
   canvas.onclick = scatterPetals;
   canvas.ontouchend = function(e){ e.preventDefault(); scatterPetals(); };
@@ -3578,6 +3642,18 @@ function showCertificate() {
     quoteEl.textContent = '"愿前程似锦，万事顺遂。"';
   }
 
+  // 初始化愿望偷看按钮
+  const wishPeekContent = document.getElementById('wishPeekContent');
+  const wishPeekBtn = document.getElementById('wishPeekBtn');
+  if (wishPeekContent && wishPeekBtn) {
+    wishPeekContent.textContent = ritualWishText || '一个没说出口的心愿';
+    wishPeekBtn.addEventListener('click', function() {
+      wishPeekContent.classList.add('show');
+      wishPeekBtn.classList.add('opened');
+      playTone(880, 0.3, 'sine', 0.06);
+    });
+  }
+
   playLevelComplete();
 
   // 保存纪念卡（将证书卡片转为图片下载）
@@ -3588,7 +3664,78 @@ function showCertificate() {
 }
 
 function saveCertificateAsImage() {
-  // 简易方案：提示长按保存（移动端）。生成一张合成图。
+  // 用 SVG foreignObject 把 HTML 证书卡片 1:1 截图，保证和页面一致
+  const card = document.getElementById('certCard');
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+  const W = Math.ceil(rect.width);
+  const H = Math.ceil(rect.height);
+  // 克隆节点并内联必要的样式，确保截图完整
+  const clone = card.cloneNode(true);
+  // 收集页面所有样式表，注入到 SVG 中
+  let stylesText = '';
+  try {
+    for (const sheet of document.styleSheets) {
+      try {
+        const rules = sheet.cssRules || sheet.rules;
+        if (rules) {
+          for (const rule of rules) { stylesText += rule.cssText + '\n'; }
+        }
+      } catch(e) { /* 跨域样式表跳过 */ }
+    }
+  } catch(e) {}
+
+  const svgData =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+      '<defs><style type="text/css"><![CDATA[' + stylesText + ']]></style></defs>' +
+      '<foreignObject width="100%" height="100%">' +
+        '<div xmlns="http://www.w3.org/1999/xhtml" style="width:' + W + 'px;height:' + H + 'px;">' +
+          clone.outerHTML +
+        '</div>' +
+      '</foreignObject>' +
+    '</svg>';
+
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = function() {
+    const scale = 2; // 2倍清晰度
+    const cv = document.createElement('canvas');
+    cv.width = W * scale;
+    cv.height = H * scale;
+    const c = cv.getContext('2d');
+    c.scale(scale, scale);
+    c.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const dataURL = cv.toDataURL('image/png');
+    // 保存
+    const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+    if (isWeChat) {
+      showSaveOverlay(dataURL);
+    } else {
+      cv.toBlob(function(blob) {
+        const burl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'birthday_certificate_zhanghuiyan.png';
+        link.href = burl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(burl), 1000);
+      }, 'image/png');
+    }
+    playDecryptSuccess();
+  };
+  img.onerror = function() {
+    URL.revokeObjectURL(url);
+    // foreignObject 失败时降级用 Canvas 重绘
+    saveCertificateFallback();
+  };
+  img.src = url;
+}
+
+// 降级方案：Canvas 手动重绘证书
+function saveCertificateFallback() {
   const W = 600, H = 820;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
@@ -3637,7 +3784,6 @@ function saveCertificateAsImage() {
   c.textAlign = 'left';
   c.fillStyle = 'rgba(255,255,255,0.4)'; c.font = '11px monospace';
   c.fillText('见证签名', 70, 650);
-  // 绘制签名
   const signCanvas = document.getElementById('signPad');
   c.drawImage(signCanvas, 70, 660, 240, 90);
   // 印章
@@ -3654,14 +3800,11 @@ function saveCertificateAsImage() {
   c.fillStyle = 'rgba(255,255,255,0.3)'; c.font = '12px monospace';
   c.fillText('— HAPPY BIRTHDAY ZHANG HUIYAN · 2025.08.10 —', W/2, H - 40);
 
-  // 保存到相册：优先用 Blob 下载，微信环境用长按保存浮层
   const dataURL = cv.toDataURL('image/png');
   const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
   if (isWeChat) {
-    // 微信内置浏览器拦截 download，弹出全屏图片供长按保存
     showSaveOverlay(dataURL);
   } else {
-    // 普通浏览器：用 Blob + download 属性直接下载
     cv.toBlob(function(blob) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
