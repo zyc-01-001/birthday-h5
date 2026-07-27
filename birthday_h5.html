@@ -3861,7 +3861,7 @@ function showCertificate() {
   submitWishToBackend();
 }
 
-// 提交愿望到 JSONbin.io 后台存储
+// 提交愿望到 GitHub Gist 后端存储
 async function submitWishToBackend() {
   if (!ritualWishText) return;
   const wishData = {
@@ -3870,29 +3870,36 @@ async function submitWishToBackend() {
     id: Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase()
   };
 
-  // 使用 jsonbin.io 免费存储（Bin ID 需要在 jsonbin.io 上创建后填入）
-  // 备用方案：存入 localStorage 同时尝试提交
   try {
     // 先存本地
     const localWishes = JSON.parse(localStorage.getItem('birthday_wishes') || '[]');
     localWishes.push(wishData);
     localStorage.setItem('birthday_wishes', JSON.stringify(localWishes));
 
-    // 尝试提交到 jsonbin.io（需要替换 YOUR_API_KEY 和 YOUR_BIN_ID）
-    const API_KEY = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
-    const BIN_ID = localStorage.getItem('wish_bin_id') || null;
+    // 尝试提交到 GitHub Gist（通过 GitHub API）
+    // 使用公开的匿名 Gist 端点，或配置的 token
+    const gistToken = localStorage.getItem('gh_gist_token') || null;
+    const gistId = localStorage.getItem('gh_gist_id') || null;
 
-    if (BIN_ID) {
-      const resp = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID, {
-        method: 'PUT',
+    if (gistToken && gistId) {
+      const resp = await fetch('https://api.github.com/gists/' + gistId, {
+        method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY
+          'Authorization': 'token ' + gistToken,
+          'Accept': 'application/vnd.github.v3+json'
         },
-        body: JSON.stringify(localWishes)
+        body: JSON.stringify({
+          description: 'Birthday Wishes Collection',
+          public: false,
+          files: {
+            'wishes.json': {
+              content: JSON.stringify(localWishes, null, 2)
+            }
+          }
+        })
       });
       if (resp.ok) {
-        console.log('愿望已同步到云端');
+        console.log('愿望已同步到 GitHub Gist');
       }
     }
   } catch (e) {
