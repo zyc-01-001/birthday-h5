@@ -1564,7 +1564,7 @@ body::before{
 <canvas class="petal-canvas" id="petalCanvas"></canvas>
 
 <!-- 背景音乐 -->
-<audio id="bgMusic" src="assets/小幸运.mp3" loop preload="auto" autoplay></audio>
+<audio id="bgMusic" src="assets/小幸运.mp3" loop preload="metadata" autoplay></audio>
 
 <!-- Music toggle button -->
 <button class="music-btn" id="musicBtn" title="Music">♪</button>
@@ -2184,22 +2184,31 @@ function initParticles() {
   const canvas = document.getElementById('particleCanvas');
   const ctx = canvas.getContext('2d');
   let particles = [];
+  let rafId = null;
+  let running = false;
+  // 手机性能降级：小屏减少粒子数量
+  const isMobile = window.innerWidth < 768;
+  const particleCount = isMobile ? 20 : 50;
+  // 限制 canvas 实际像素，降低绘制开销（手机 retina 屏）
+  const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
 
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
   }
   resize();
   window.addEventListener('resize', resize);
 
   // Create particles
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < particleCount; i++) {
     particles.push({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      r: Math.random() * 2 + 0.5,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
+      r: (Math.random() * 2 + 0.5) * dpr,
+      vx: (Math.random() - 0.5) * 0.3 * dpr,
+      vy: (Math.random() - 0.5) * 0.3 * dpr,
       alpha: Math.random() * 0.5 + 0.1,
       color: ['#ff6b9d', '#e040fb', '#b388ff', '#ffd700'][Math.floor(Math.random() * 4)],
     });
@@ -2207,7 +2216,8 @@ function initParticles() {
 
   function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
       p.x += p.vx;
       p.y += p.vy;
       if (p.x < 0) p.x = canvas.width;
@@ -2219,11 +2229,17 @@ function initParticles() {
       ctx.fillStyle = p.color;
       ctx.globalAlpha = p.alpha;
       ctx.fill();
-    });
+    }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
   }
-  animate();
+  function start() { if (!running) { running = true; animate(); } }
+  function stop() { if (running) { running = false; if (rafId) cancelAnimationFrame(rafId); } }
+  // 页面不可见时暂停，节省手机耗电与卡顿
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else start();
+  });
+  start();
 }
 
 // ============================================================
@@ -2233,10 +2249,20 @@ function initPetals() {
   const canvas = document.getElementById('petalCanvas');
   const ctx = canvas.getContext('2d');
   let petals = [];
+  let rafId = null;
+  let running = false;
+  // 手机性能降级
+  const isMobile = window.innerWidth < 768;
+  const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
+  const maxPetals = isMobile ? 12 : 25;
+  const initCount = isMobile ? 7 : 15;
+  const spawnRate = isMobile ? 0.05 : 0.08;
 
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
   }
   resize();
   window.addEventListener('resize', resize);
@@ -2253,10 +2279,10 @@ function initPetals() {
   function createPetal() {
     return {
       x: Math.random() * canvas.width,
-      y: -20,
-      size: 6 + Math.random() * 8,
-      speedY: 0.5 + Math.random() * 1.2,
-      speedX: (Math.random() - 0.5) * 0.8,
+      y: -20 * dpr,
+      size: (6 + Math.random() * 8) * dpr,
+      speedY: (0.5 + Math.random() * 1.2) * dpr,
+      speedX: (Math.random() - 0.5) * 0.8 * dpr,
       angle: Math.random() * Math.PI * 2,
       angleSpeed: (Math.random() - 0.5) * 0.04,
       sway: Math.random() * Math.PI * 2,
@@ -2266,36 +2292,21 @@ function initPetals() {
     };
   }
 
-  // 绘制单片花瓣（椭圆 + 渐变）
+  // 绘制单片花瓣（椭圆 + 渐变）— 手机简化绘制
   function drawPetal(p) {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle);
     ctx.globalAlpha = p.alpha;
-    
-    // 花瓣形状：用两个椭圆叠加
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size);
-    grad.addColorStop(0, p.color);
-    grad.addColorStop(1, p.color.replace(/[\d.]+\)/, '0.1)'));
-    ctx.fillStyle = grad;
-    
+    ctx.fillStyle = p.color;
     ctx.beginPath();
     ctx.ellipse(0, 0, p.size * 0.6, p.size, 0, 0, Math.PI * 2);
     ctx.fill();
-    
-    // 花瓣中线高光
-    ctx.strokeStyle = p.color.replace(/[\d.]+\)/, '0.3)');
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(0, -p.size);
-    ctx.lineTo(0, p.size);
-    ctx.stroke();
-    
     ctx.restore();
   }
 
   // 初始生成一批花瓣
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < initCount; i++) {
     const p = createPetal();
     p.y = Math.random() * canvas.height;
     petals.push(p);
@@ -2305,14 +2316,14 @@ function initPetals() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 随机生成新花瓣
-    if (petals.length < 25 && Math.random() < 0.08) {
+    if (petals.length < maxPetals && Math.random() < spawnRate) {
       petals.push(createPetal());
     }
 
     for (let i = petals.length - 1; i >= 0; i--) {
       const p = petals[i];
       p.sway += p.swaySpeed;
-      p.x += p.speedX + Math.sin(p.sway) * 0.5;
+      p.x += p.speedX + Math.sin(p.sway) * 0.5 * dpr;
       p.y += p.speedY;
       p.angle += p.angleSpeed;
 
@@ -2324,9 +2335,14 @@ function initPetals() {
       }
     }
 
-    requestAnimationFrame(animatePetals);
+    rafId = requestAnimationFrame(animatePetals);
   }
-  animatePetals();
+  function start() { if (!running) { running = true; animatePetals(); } }
+  function stop() { if (running) { running = false; if (rafId) cancelAnimationFrame(rafId); } }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else start();
+  });
+  start();
 }
 
 // ============================================================
@@ -2440,8 +2456,8 @@ function initLevel3() {
   level3Initialized = true;
 
   const photoSrcs = [
-    'assets/photo_1.jpg', 'assets/photo_2.jpg', 'assets/photo_3.png',
-    'assets/photo_4.png'
+    'assets/photo_1.jpg', 'assets/photo_2.jpg', 'assets/photo_3.jpg',
+    'assets/photo_4.jpg'
   ];
 
   // ===== 拍立得照片墙：每张照片只出现一次，错落倾斜排布 =====
@@ -2465,7 +2481,7 @@ function initLevel3() {
     el.innerHTML = `
       <div class="polaroid-pin"></div>
       <div class="polaroid-img">
-        <img src="${src}" alt="回忆 ${i + 1}" onerror="this.style.display='none';">
+        <img src="${src}" alt="回忆 ${i + 1}" loading="lazy" decoding="async" onerror="this.style.display='none';">
       </div>
     `;
     // 点击放大置顶
