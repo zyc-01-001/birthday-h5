@@ -4080,145 +4080,112 @@ function saveCertificateAsImage() {
   saveCertificateCanvas();
 }
 
-// 使用 html2canvas 直接截取证书 DOM，确保与网页显示完全一致
+// Canvas 精确绘制证书（坐标匹配 CSS 布局，不依赖 html2canvas）
 function saveCertificateCanvas() {
   var certCard = document.getElementById('certCard');
   if (!certCard) { playDecryptSuccess(); return; }
 
-  // 检查 html2canvas 是否加载
-  if (typeof html2canvas === 'undefined') {
-    alert('截图组件加载中，请稍后重试');
-    return;
-  }
-
-  // 截图前暂停动画
-  certCard.style.animation = 'none';
-  certCard.style.transform = 'none';
-
-  // 手机端用 2x，桌面用 2x（不用3x避免内存溢出）
-  var scale = 2;
-
-  html2canvas(certCard, {
-    scale: scale,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: null,
-    logging: false,
-    onclone: function(clonedDoc) {
-      // 仅暂停动画，不做复杂操作
-      var clonedCard = clonedDoc.getElementById('certCard');
-      if (clonedCard) {
-        clonedCard.style.animation = 'none';
-        clonedCard.style.transform = 'none';
-      }
-    }
-  }).then(function(canvas) {
-    // 恢复动画
-    certCard.style.animation = '';
-    certCard.style.transform = '';
-
-    var dataURL = canvas.toDataURL('image/png', 1.0);
-    var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-    if (isWeChat) {
-      showSaveOverlay(dataURL);
-    } else {
-      canvas.toBlob(function(blob) {
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.download = 'birthday_certificate_zhanghuiyan.png';
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-      }, 'image/png');
-    }
-    playDecryptSuccess();
-  }).catch(function(err) {
-    // 恢复动画
-    certCard.style.animation = '';
-    certCard.style.transform = '';
-    console.error('html2canvas error:', err);
-    // 如果 html2canvas 失败，用 Canvas 手绘作为兜底
-    saveCertificateFallback();
-  });
-}
-
-// Canvas 手绘兜底方案（html2canvas 失败时使用）
-function saveCertificateFallback() {
-  var W = 640, H = 900;
+  // 画布尺寸精确匹配 cert-card CSS: width 340px, padding 36px 28px 28px
+  var W = 340, H = 580;
   var cv = document.createElement('canvas');
   cv.width = W * 2; cv.height = H * 2;
   var c = cv.getContext('2d');
   c.scale(2, 2);
 
-  // 背景
+  // ===== 1. 背景 =====
   var bg = c.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#2a1840');
-  bg.addColorStop(1, '#140c23');
+  bg.addColorStop(0, 'rgba(40,20,60,0.95)');
+  bg.addColorStop(1, 'rgba(15,10,30,0.98)');
   c.fillStyle = bg;
+  // 圆角矩形
   c.beginPath();
-  c.moveTo(20, 0);
-  c.lineTo(W - 20, 0);
-  c.quadraticCurveTo(W, 0, W, 20);
-  c.lineTo(W, H - 20);
-  c.quadraticCurveTo(W, H, W - 20, H);
-  c.lineTo(20, H);
-  c.quadraticCurveTo(0, H, 0, H - 20);
-  c.lineTo(0, 20);
-  c.quadraticCurveTo(0, 0, 20, 0);
-  c.closePath();
+  c.moveTo(20, 0); c.lineTo(W-20, 0);
+  c.quadraticCurveTo(W, 0, W, 20); c.lineTo(W, H-20);
+  c.quadraticCurveTo(W, H, W-20, H); c.lineTo(20, H);
+  c.quadraticCurveTo(0, H, 0, H-20); c.lineTo(0, 20);
+  c.quadraticCurveTo(0, 0, 20, 0); c.closePath();
   c.fill();
 
-  // 彩虹边框（多段彩色线）
-  var bx = 10, by = 10, bw = W - 20, bh = H - 20;
-  var colors = ['#ffd700','#ff6b9d','#e040fb','#b388ff','#00ff88','#ffd700'];
-  c.lineWidth = 3;
-  c.globalAlpha = 0.6;
-  for (var i = 0; i < colors.length; i++) {
-    var t1 = i / colors.length;
-    var t2 = (i + 1) / colors.length;
-    c.strokeStyle = colors[i];
+  // ===== 2. 全息边框（彩色渐变描边） =====
+  var borderColors = ['#ffd700','#ff6b9d','#e040fb','#b388ff','#00ff88','#ffd700'];
+  c.lineWidth = 2;
+  c.globalAlpha = 0.5;
+  for (var bi = 0; bi < borderColors.length; bi++) {
+    c.strokeStyle = borderColors[bi];
     c.beginPath();
-    // 上边
-    var x1 = bx + t1 * bw, x2 = bx + t2 * bw;
-    if (t2 <= 0.25) { c.moveTo(x1, by); c.lineTo(x2, by); }
-    else if (t1 < 0.25) { c.moveTo(x1, by); c.lineTo(bx + bw, by); }
+    c.moveTo(20, 0); c.lineTo(W-20, 0);
+    c.quadraticCurveTo(W, 0, W, 20); c.lineTo(W, H-20);
+    c.quadraticCurveTo(W, H, W-20, H); c.lineTo(20, H);
+    c.quadraticCurveTo(0, H, 0, H-20); c.lineTo(0, 20);
+    c.quadraticCurveTo(0, 0, 20, 0); c.closePath();
     c.stroke();
   }
   c.globalAlpha = 1;
 
-  // 外框
-  c.strokeStyle = 'rgba(255,215,0,0.3)';
-  c.lineWidth = 2;
+  // ===== 3. 内边框（inset 10px） =====
+  c.strokeStyle = 'rgba(255,215,0,0.2)';
+  c.lineWidth = 1;
   c.beginPath();
-  c.moveTo(24, 24);
-  c.lineTo(60, 24);
-  c.moveTo(24, 24);
-  c.lineTo(24, 60);
-  c.stroke();
-  c.beginPath();
-  c.moveTo(W - 24, H - 24);
-  c.lineTo(W - 60, H - 24);
-  c.moveTo(W - 24, H - 24);
-  c.lineTo(W - 24, H - 60);
+  c.moveTo(24, 10); c.lineTo(W-24, 10);
+  c.quadraticCurveTo(W-10, 10, W-10, 24); c.lineTo(W-10, H-24);
+  c.quadraticCurveTo(W-10, H-10, W-24, H-10); c.lineTo(24, H-10);
+  c.quadraticCurveTo(10, H-10, 10, H-24); c.lineTo(10, 24);
+  c.quadraticCurveTo(10, 10, 24, 10); c.closePath();
   c.stroke();
 
-  // 顶部光晕
-  var topG = c.createRadialGradient(W/2, -30, 0, W/2, -30, 280);
-  topG.addColorStop(0, 'rgba(255,107,157,0.35)');
+  // ===== 4. 四角金色角标（匹配 cert-border::before/::after） =====
+  c.strokeStyle = '#ffd700';
+  c.lineWidth = 2;
+  c.globalAlpha = 1;
+  // 左上角
+  c.beginPath(); c.moveTo(10, 42); c.lineTo(10, 10); c.lineTo(42, 10); c.stroke();
+  // 右下角
+  c.beginPath(); c.moveTo(W-10, H-42); c.lineTo(W-10, H-10); c.lineTo(W-42, H-10); c.stroke();
+
+  // ===== 5. 虚线内边框（inset 16px） =====
+  c.strokeStyle = 'rgba(255,215,0,0.1)';
+  c.lineWidth = 1;
+  c.setLineDash([3, 3]);
+  c.beginPath();
+  c.moveTo(26, 16); c.lineTo(W-26, 16);
+  c.quadraticCurveTo(W-16, 16, W-16, 26); c.lineTo(W-16, H-26);
+  c.quadraticCurveTo(W-16, H-16, W-26, H-16); c.lineTo(26, H-16);
+  c.quadraticCurveTo(16, H-16, 16, H-26); c.lineTo(16, 26);
+  c.quadraticCurveTo(16, 16, 26, 16); c.closePath();
+  c.stroke();
+  c.setLineDash([]);
+
+  // ===== 6. 左右装饰侧线 =====
+  var sideL = c.createLinearGradient(0, H*0.25, 0, H*0.75);
+  sideL.addColorStop(0, 'transparent');
+  sideL.addColorStop(0.3, 'rgba(255,215,0,0.2)');
+  sideL.addColorStop(0.7, 'rgba(255,215,0,0.2)');
+  sideL.addColorStop(1, 'transparent');
+  c.strokeStyle = sideL; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(20, H*0.25); c.lineTo(20, H*0.75); c.stroke();
+  var sideR = c.createLinearGradient(0, H*0.25, 0, H*0.75);
+  sideR.addColorStop(0, 'transparent');
+  sideR.addColorStop(0.3, 'rgba(255,107,157,0.2)');
+  sideR.addColorStop(0.7, 'rgba(255,107,157,0.2)');
+  sideR.addColorStop(1, 'transparent');
+  c.strokeStyle = sideR;
+  c.beginPath(); c.moveTo(W-20, H*0.25); c.lineTo(W-20, H*0.75); c.stroke();
+
+  // ===== 7. 顶部光晕 =====
+  var topG = c.createRadialGradient(W/2, -30, 0, W/2, -30, 140);
+  topG.addColorStop(0, 'rgba(255,107,157,0.25)');
   topG.addColorStop(0.5, 'rgba(255,215,0,0.1)');
   topG.addColorStop(1, 'transparent');
   c.fillStyle = topG;
-  c.fillRect(0, 0, W, 220);
+  c.fillRect(0, 0, W, 120);
 
-  // 装饰粒子
+  // ===== 8. 装饰粒子 =====
   var rng = (function(s){ return function(){ s = Math.imul(s ^ s >>> 15, s|1); s ^= s + Math.imul(s ^ s >>> 7, s|61); return ((s ^ s>>>14)>>>0)/4294967296; }; })(42);
-  for (var pi = 0; pi < 25; pi++) {
-    var px = 40 + rng() * (W - 80);
-    var py = 40 + rng() * (H - 80);
-    var ps = 0.8 + rng() * 2;
-    var pa = 0.15 + rng() * 0.45;
+  for (var pi = 0; pi < 20; pi++) {
+    var px = 30 + rng() * (W - 60);
+    var py = 30 + rng() * (H - 60);
+    var ps = 0.8 + rng() * 1.5;
+    var pa = 0.15 + rng() * 0.4;
     c.save();
     c.globalAlpha = pa * 0.4;
     c.fillStyle = '#ffd700';
@@ -4231,185 +4198,246 @@ function saveCertificateFallback() {
     c.restore();
   }
 
-  // 水印
+  // ===== 9. 水印 =====
   c.save();
   c.translate(W/2, H/2);
   c.rotate(-0.5);
-  c.font = '900 52px Orbitron, sans-serif';
-  c.fillStyle = 'rgba(255,215,0,0.03)';
+  c.font = '900 26px Orbitron, sans-serif';
+  c.fillStyle = 'rgba(255,215,0,0.04)';
   c.textAlign = 'center';
   c.fillText('HAPPY BIRTHDAY', 0, 0);
-  c.fillText('HAPPY BIRTHDAY', 0, 55);
+  c.fillText('HAPPY BIRTHDAY', 0, 30);
   c.restore();
 
-  // 星标
+  // ===== 内容区域（padding: 36px 28px 28px） =====
+  var cx = W / 2; // 中心 X
+  var padX = 28;  // 左右 padding
+  var y = 36;     // 起点 = padding-top
+
+  // ===== 10. 星标 Emblem（font-size 36px） =====
   c.save();
   c.textAlign = 'center';
   c.fillStyle = '#ffd700';
   c.globalAlpha = 0.3;
-  c.font = '50px serif';
-  c.fillText('\u2726', W/2, 80);
+  c.font = '42px serif';
+  c.fillText('\u2726', cx, y + 30);
   c.globalAlpha = 1.0;
-  c.font = '38px serif';
-  c.fillText('\u2726', W/2, 80);
+  c.font = '36px serif';
+  c.fillText('\u2726', cx, y + 30);
   c.restore();
+  y += 36 + 10; // emblem height + margin-top
 
-  // 标题
+  // ===== 11. 标题（font-size 24px, margin: 10px 0 6px） =====
   c.save();
   c.textAlign = 'center';
   c.fillStyle = '#ffd700';
   c.globalAlpha = 0.3;
-  c.font = '900 28px Orbitron, sans-serif';
-  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', W/2, 118);
-  c.globalAlpha = 1.0;
   c.font = '900 26px Orbitron, sans-serif';
-  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', W/2, 118);
+  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', cx, y + 22);
+  c.globalAlpha = 1.0;
+  c.font = '900 24px Orbitron, sans-serif';
+  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', cx, y + 22);
   c.restore();
+  y += 24 + 6; // title height + margin-bottom
 
-  // 副标题
+  // ===== 12. 副标题（font-size 9px） =====
   c.save();
   c.textAlign = 'center';
-  c.font = '500 10px "JetBrains Mono", monospace';
-  c.globalAlpha = 0.85;
+  c.font = '500 9px "JetBrains Mono", monospace';
+  c.globalAlpha = 0.8;
   c.fillStyle = '#b388ff';
-  c.fillText('BIRTHDAY COMMEMORATION', W/2, 138);
+  c.fillText('BIRTHDAY COMMEMORATION', cx, y + 9);
   c.restore();
+  y += 9 + 10; // subtitle height + diamond margin-top
 
-  // 分隔线
-  var div1 = c.createLinearGradient(W*0.12, 0, W*0.88, 0);
-  div1.addColorStop(0, 'transparent');
-  div1.addColorStop(0.5, 'rgba(255,215,0,0.5)');
-  div1.addColorStop(1, 'transparent');
-  c.strokeStyle = div1; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(W*0.12, 168); c.lineTo(W*0.88, 168); c.stroke();
+  // ===== 13. 钻石装饰（margin: 10px auto 0） =====
+  c.save();
+  c.fillStyle = '#ffd700';
+  c.globalAlpha = 0.6;
+  // 左钻石
+  c.save(); c.translate(cx - 16, y + 3); c.rotate(Math.PI/4); c.fillRect(-3, -3, 6, 6); c.restore();
+  // 中钻石
+  c.globalAlpha = 0.8;
+  c.font = '12px serif';
+  c.textAlign = 'center';
+  c.fillText('\u25C6', cx, y + 6);
+  // 右钻石
+  c.globalAlpha = 0.6;
+  c.save(); c.translate(cx + 16, y + 3); c.rotate(Math.PI/4); c.fillRect(-3, -3, 6, 6); c.restore();
+  c.restore();
+  y += 6 + 24; // diamond height + header margin-bottom
+
+  // ===== 14. 分隔线1（margin: 16px 0 12px） =====
+  y += 16; // margin-top
+  var divGrad = c.createLinearGradient(padX, 0, W - padX, 0);
+  divGrad.addColorStop(0, 'transparent');
+  divGrad.addColorStop(0.5, 'rgba(255,215,0,0.3)');
+  divGrad.addColorStop(1, 'transparent');
+  c.strokeStyle = divGrad; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(padX + 10, y); c.lineTo(W - padX - 10, y); c.stroke();
+  // 分隔符 ✧
   c.save();
   c.textAlign = 'center';
   c.fillStyle = '#ffd700';
-  c.globalAlpha = 0.8;
+  c.globalAlpha = 0.6;
   c.font = '14px serif';
-  c.fillText('\u2727', W/2, 173);
+  c.fillText('\u2727', cx, y + 5);
   c.restore();
+  y += 14 + 12; // divider height + margin-bottom
 
-  // 兹证明
+  // ===== 15. 兹证明（font-size 14px） =====
   c.save();
   c.textAlign = 'center';
-  c.font = '500 17px "Rajdhani", sans-serif';
-  c.globalAlpha = 0.8;
+  c.font = '500 14px "Rajdhani", sans-serif';
+  c.globalAlpha = 0.75;
   c.fillStyle = '#ffffff';
-  c.fillText('\u5179\u8BC1\u660E', W/2, 210);
+  c.fillText('\u5179\u8BC1\u660E', cx, y + 14);
   c.restore();
+  y += 14 * 1.4; // line-height 1.4
 
-  // 名字
+  // ===== 16. 名字（font-size 32px, margin: 12px 0） =====
+  y += 12; // margin-top
   c.save();
   c.textAlign = 'center';
   c.fillStyle = '#ffd700';
   c.globalAlpha = 0.3;
-  c.font = '900 38px Orbitron, sans-serif';
-  c.fillText('\u5F20\u6167\u8273', W/2, 255);
+  c.font = '900 34px Orbitron, sans-serif';
+  c.fillText('\u5F20\u6167\u8273', cx, y + 30);
   c.globalAlpha = 1.0;
-  c.font = '900 36px Orbitron, sans-serif';
-  c.fillText('\u5F20\u6167\u8273', W/2, 255);
+  c.font = '900 32px Orbitron, sans-serif';
+  c.fillText('\u5F20\u6167\u8273', cx, y + 30);
   c.restore();
+  y += 32 + 12; // name height + margin-bottom
 
-  // 日期
+  // ===== 17. 日期行（font-size 14px） =====
   c.save();
   c.textAlign = 'center';
   c.fillStyle = '#ffd700';
   c.globalAlpha = 0.2;
-  c.font = '700 17px "Rajdhani", sans-serif';
-  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', W/2, 292);
-  c.globalAlpha = 1.0;
   c.font = '700 15px "Rajdhani", sans-serif';
-  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', W/2, 292);
+  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', cx, y + 14);
+  c.globalAlpha = 1.0;
+  c.font = '700 14px "Rajdhani", sans-serif';
+  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', cx, y + 14);
   c.restore();
+  y += 14 * 1.4;
 
-  // 分隔线2
+  // ===== 18. 分隔线2（margin: 16px 0 12px） =====
+  y += 16;
+  c.strokeStyle = divGrad; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(padX + 10, y); c.lineTo(W - padX - 10, y); c.stroke();
   c.save();
-  c.strokeStyle = div1; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(W*0.12, 314); c.lineTo(W*0.88, 314); c.stroke();
   c.textAlign = 'center';
   c.fillStyle = 'rgba(255,107,157,0.6)';
   c.globalAlpha = 0.6;
   c.font = '14px serif';
-  c.fillText('\u2661', W/2, 319);
+  c.fillText('\u2661', cx, y + 5);
   c.restore();
+  y += 14 + 12;
 
-  // 愿望
+  // ===== 19. 愿望（font-size 13px, margin-top 18px, padding-top 14px） =====
+  y += 18; // margin-top
+  // 上边框线
+  c.strokeStyle = 'rgba(255,215,0,0.15)'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(padX, y); c.lineTo(W - padX, y); c.stroke();
+  // 中间高亮线
+  var hlGrad = c.createLinearGradient(cx - 20, 0, cx + 20, 0);
+  hlGrad.addColorStop(0, 'transparent');
+  hlGrad.addColorStop(0.5, 'rgba(255,215,0,0.6)');
+  hlGrad.addColorStop(1, 'transparent');
+  c.strokeStyle = hlGrad; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(cx - 20, y); c.lineTo(cx + 20, y); c.stroke();
+  y += 14; // padding-top
+
   c.save();
   c.textAlign = 'center';
   var wish = (typeof ritualWishText !== 'undefined' && ritualWishText) ? ritualWishText : '\u613F\u524D\u7A0B\u4F3C\u9526\uFF0C\u4E07\u4E8B\u987A\u9042';
-  c.font = 'italic 14px "Rajdhani", sans-serif';
+  c.font = 'italic 13px "Rajdhani", sans-serif';
   c.globalAlpha = 1.0;
   c.fillStyle = '#b388ff';
-  var chars = ('"' + wish + '"').split('');
-  var line = '', yy = 350, maxW = W - 90, lh = 24;
+  var wishText = '"' + wish + '"';
+  var chars = wishText.split('');
+  var line = '', yy = y + 13, maxW = W - padX * 2 - 10, lh = 13 * 1.8;
   for (var ci2 = 0; ci2 < chars.length; ci2++) {
     var test = line + chars[ci2];
     if (c.measureText(test).width > maxW && line) {
-      c.fillText(line, W/2, yy);
+      c.fillText(line, cx, yy);
       line = chars[ci2];
       yy += lh;
     } else { line = test; }
   }
-  c.fillText(line, W/2, yy);
+  c.fillText(line, cx, yy);
+  y = yy + 5;
   c.restore();
+  y += 24; // body margin-bottom
 
-  // 签名区分隔线
-  c.strokeStyle = 'rgba(255,215,0,0.18)'; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(50, 680); c.lineTo(W-50, 680); c.stroke();
+  // ===== 20. 签名区分隔线（border-top, padding-top 18px） =====
+  c.strokeStyle = 'rgba(255,215,0,0.15)'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(padX, y); c.lineTo(W - padX, y); c.stroke();
+  y += 18; // padding-top
 
-  // 签名
+  // 签名标签
   c.save();
   c.textAlign = 'left';
   c.fillStyle = 'rgba(255,255,255,0.4)';
-  c.font = '500 10px "JetBrains Mono", monospace';
-  c.fillText('WITNESS SIGNATURE', 60, 710);
+  c.font = '500 9px "JetBrains Mono", monospace';
+  c.fillText('WITNESS SIGNATURE', padX, y + 9);
   c.font = '400 11px sans-serif';
   c.fillStyle = 'rgba(255,255,255,0.35)';
-  c.fillText('\u89C1\u8BC1\u7B7E\u540D', 60, 726);
+  c.fillText('\u89C1\u8BC1\u7B7E\u540D', padX, y + 22);
   c.restore();
+
+  // 签名图片
   var signCanvas = document.getElementById('signPad');
   if (signCanvas) {
     c.save();
-    c.drawImage(signCanvas, 60, 735, 200, 70);
+    c.drawImage(signCanvas, padX, y + 26, 130, 55);
     c.restore();
   }
 
-  // 印章
+  // ===== 21. 印章（width 64px, right side, rotate -12deg） =====
+  var sealX = W - padX - 32;
+  var sealY = y + 32;
   c.save();
-  c.translate(W - 90, 745);
-  c.rotate(-0.2);
+  c.translate(sealX, sealY);
+  c.rotate(-12 * Math.PI / 180);
+  // 背景径向渐变
   var sealBg = c.createRadialGradient(0, 0, 0, 0, 0, 32);
-  sealBg.addColorStop(0, 'rgba(255,107,157,0.18)');
-  sealBg.addColorStop(1, 'rgba(255,107,157,0.05)');
+  sealBg.addColorStop(0, 'rgba(255,107,157,0.25)');
+  sealBg.addColorStop(1, 'transparent');
   c.fillStyle = sealBg;
   c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.fill();
-  c.strokeStyle = 'rgba(255,107,157,0.35)';
+  // 外圈虚线
+  c.strokeStyle = 'rgba(255,107,157,0.3)';
   c.lineWidth = 1;
   c.setLineDash([3, 3]);
-  c.beginPath(); c.arc(0, 0, 40, 0, Math.PI*2); c.stroke();
+  c.beginPath(); c.arc(0, 0, 38, 0, Math.PI*2); c.stroke();
   c.setLineDash([]);
-  c.strokeStyle = 'rgba(255,107,157,0.85)';
+  // 主圆圈
+  c.strokeStyle = 'rgba(255,107,157,0.8)';
   c.lineWidth = 2.5;
   c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.stroke();
+  // 文字
   c.fillStyle = '#ff6b9d';
   c.textAlign = 'center';
-  c.font = '900 14px sans-serif';
+  c.font = '900 11px Orbitron, sans-serif';
   c.fillText('19', 0, -2);
-  c.font = '600 11px sans-serif';
-  c.fillText('\u751F\u65E5', 0, 16);
+  c.font = '600 9px sans-serif';
+  c.fillText('\u751F\u65E5', 0, 12);
   c.restore();
 
-  // 序列号
+  y += 64 + 12; // seal height + serial margin-top
+
+  // ===== 22. 序列号 =====
   c.save();
   c.textAlign = 'center';
   var serialEl = document.getElementById('certSerial');
   c.fillStyle = 'rgba(255,255,255,0.25)';
-  c.font = '400 8px monospace';
-  c.fillText(serialEl ? serialEl.textContent : '', W/2, 840);
+  c.font = '400 8px "JetBrains Mono", monospace';
+  c.fillText(serialEl ? serialEl.textContent : '', cx, y + 8);
   c.restore();
 
-  // 输出
+  // ===== 输出 =====
   var dataURL = cv.toDataURL('image/png', 1.0);
   var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
   if (isWeChat) {
