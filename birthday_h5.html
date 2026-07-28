@@ -4085,23 +4085,18 @@ function saveCertificateCanvas() {
   var certCard = document.getElementById('certCard');
   if (!certCard) { playDecryptSuccess(); return; }
 
-  // 截图前暂停动画，固定在某一帧（让截图稳定）
-  certCard.style.animation = 'none';
-  certCard.style.transform = 'translateY(0)';
-
-  // 获取证书在页面上的实际尺寸
-  var rect = certCard.getBoundingClientRect();
-  var dpr = window.devicePixelRatio || 1;
-  // 手机端用 3x，桌面用 2x
-  var scale = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 3 : 2;
-
+  // 检查 html2canvas 是否加载
   if (typeof html2canvas === 'undefined') {
-    // 如果 html2canvas 没加载成功，回退到提示
     alert('截图组件加载中，请稍后重试');
-    certCard.style.animation = '';
-    certCard.style.transform = '';
     return;
   }
+
+  // 截图前暂停动画
+  certCard.style.animation = 'none';
+  certCard.style.transform = 'none';
+
+  // 手机端用 2x，桌面用 2x（不用3x避免内存溢出）
+  var scale = 2;
 
   html2canvas(certCard, {
     scale: scale,
@@ -4109,66 +4104,13 @@ function saveCertificateCanvas() {
     allowTaint: true,
     backgroundColor: null,
     logging: false,
-    width: rect.width,
-    height: rect.height,
-    x: window.scrollX + rect.left,
-    y: window.scrollY + rect.top,
     onclone: function(clonedDoc) {
-      // 在克隆的文档中，进一步优化截图效果
+      // 仅暂停动画，不做复杂操作
       var clonedCard = clonedDoc.getElementById('certCard');
       if (clonedCard) {
         clonedCard.style.animation = 'none';
         clonedCard.style.transform = 'none';
-        clonedCard.style.boxShadow = '0 0 80px rgba(255,107,157,0.25), 0 0 160px rgba(176,102,255,0.12), 0 20px 60px rgba(0,0,0,0.5)';
       }
-      // 处理全息边框：html2canvas 不支持 conic-gradient，
-      // 用 conic-gradient 转 dataURL 的方式让它能被截图
-      var holoBorder = clonedDoc.querySelector('.cert-holo-border');
-      if (holoBorder) {
-        // 先把 ::before 的 conic-gradient 渲染到一个临时 canvas
-        var w = holoBorder.offsetWidth || 340;
-        var h = holoBorder.offsetHeight || 600;
-        var tempCv = clonedDoc.createElement('canvas');
-        tempCv.width = w * 2; tempCv.height = h * 2;
-        var tc = tempCv.getContext('2d');
-        tc.scale(2, 2);
-        // 用多段线性渐变模拟 conic-gradient 彩虹效果
-        var cx = w / 2, cy = h / 2, radius = Math.max(w, h);
-        var segments = 64;
-        var colors = ['#ffd700','#ff6b9d','#e040fb','#b388ff','#00ff88','#ffd700'];
-        for (var s = 0; s < segments; s++) {
-          var a1 = (s / segments) * Math.PI * 2 - Math.PI / 2;
-          var a2 = ((s + 1) / segments) * Math.PI * 2 - Math.PI / 2;
-          var ci = Math.floor((s / segments) * colors.length) % colors.length;
-          var ni = (ci + 1) % colors.length;
-          tc.beginPath();
-          tc.moveTo(cx, cy);
-          tc.arc(cx, cy, radius, a1, a2);
-          tc.closePath();
-          var midAngle = (a1 + a2) / 2;
-          var gx = cx + Math.cos(midAngle) * radius;
-          var gy = cy + Math.sin(midAngle) * radius;
-          var grad = tc.createLinearGradient(cx, cy, gx, gy);
-          grad.addColorStop(0, colors[ci]);
-          grad.addColorStop(1, colors[ni]);
-          tc.fillStyle = grad;
-          tc.globalAlpha = 0.5;
-          tc.fill();
-        }
-        // 把这个 canvas 作为背景图设置到 holoBorder 上
-        var dataUrl = tempCv.toDataURL('image/png');
-        // 创建一个替代 ::before 的 div
-        var fakeBefore = clonedDoc.createElement('div');
-        fakeBefore.style.cssText = 'position:absolute;inset:-2px;border-radius:20px;background-image:url(' + dataUrl + ');background-size:cover;';
-        holoBorder.insertBefore(fakeBefore, holoBorder.firstChild);
-        // 隐藏原始 ::before（通过覆盖它的方式）
-        var style = clonedDoc.createElement('style');
-        style.textContent = '.cert-holo-border::before{display:none!important;}';
-        clonedDoc.head.appendChild(style);
-      }
-      // 暂停所有证书相关动画
-      var allAnimated = clonedDoc.querySelectorAll('[style*="animation"]');
-      allAnimated.forEach(function(el) { /* 已在克隆中固定 */ });
     }
   }).then(function(canvas) {
     // 恢复动画
@@ -4196,9 +4138,295 @@ function saveCertificateCanvas() {
     // 恢复动画
     certCard.style.animation = '';
     certCard.style.transform = '';
-    console.error('截图失败:', err);
-    alert('截图保存失败，请重试');
+    console.error('html2canvas error:', err);
+    // 如果 html2canvas 失败，用 Canvas 手绘作为兜底
+    saveCertificateFallback();
   });
+}
+
+// Canvas 手绘兜底方案（html2canvas 失败时使用）
+function saveCertificateFallback() {
+  var W = 640, H = 900;
+  var cv = document.createElement('canvas');
+  cv.width = W * 2; cv.height = H * 2;
+  var c = cv.getContext('2d');
+  c.scale(2, 2);
+
+  // 背景
+  var bg = c.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#2a1840');
+  bg.addColorStop(1, '#140c23');
+  c.fillStyle = bg;
+  c.beginPath();
+  c.moveTo(20, 0);
+  c.lineTo(W - 20, 0);
+  c.quadraticCurveTo(W, 0, W, 20);
+  c.lineTo(W, H - 20);
+  c.quadraticCurveTo(W, H, W - 20, H);
+  c.lineTo(20, H);
+  c.quadraticCurveTo(0, H, 0, H - 20);
+  c.lineTo(0, 20);
+  c.quadraticCurveTo(0, 0, 20, 0);
+  c.closePath();
+  c.fill();
+
+  // 彩虹边框（多段彩色线）
+  var bx = 10, by = 10, bw = W - 20, bh = H - 20;
+  var colors = ['#ffd700','#ff6b9d','#e040fb','#b388ff','#00ff88','#ffd700'];
+  c.lineWidth = 3;
+  c.globalAlpha = 0.6;
+  for (var i = 0; i < colors.length; i++) {
+    var t1 = i / colors.length;
+    var t2 = (i + 1) / colors.length;
+    c.strokeStyle = colors[i];
+    c.beginPath();
+    // 上边
+    var x1 = bx + t1 * bw, x2 = bx + t2 * bw;
+    if (t2 <= 0.25) { c.moveTo(x1, by); c.lineTo(x2, by); }
+    else if (t1 < 0.25) { c.moveTo(x1, by); c.lineTo(bx + bw, by); }
+    c.stroke();
+  }
+  c.globalAlpha = 1;
+
+  // 外框
+  c.strokeStyle = 'rgba(255,215,0,0.3)';
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(24, 24);
+  c.lineTo(60, 24);
+  c.moveTo(24, 24);
+  c.lineTo(24, 60);
+  c.stroke();
+  c.beginPath();
+  c.moveTo(W - 24, H - 24);
+  c.lineTo(W - 60, H - 24);
+  c.moveTo(W - 24, H - 24);
+  c.lineTo(W - 24, H - 60);
+  c.stroke();
+
+  // 顶部光晕
+  var topG = c.createRadialGradient(W/2, -30, 0, W/2, -30, 280);
+  topG.addColorStop(0, 'rgba(255,107,157,0.35)');
+  topG.addColorStop(0.5, 'rgba(255,215,0,0.1)');
+  topG.addColorStop(1, 'transparent');
+  c.fillStyle = topG;
+  c.fillRect(0, 0, W, 220);
+
+  // 装饰粒子
+  var rng = (function(s){ return function(){ s = Math.imul(s ^ s >>> 15, s|1); s ^= s + Math.imul(s ^ s >>> 7, s|61); return ((s ^ s>>>14)>>>0)/4294967296; }; })(42);
+  for (var pi = 0; pi < 25; pi++) {
+    var px = 40 + rng() * (W - 80);
+    var py = 40 + rng() * (H - 80);
+    var ps = 0.8 + rng() * 2;
+    var pa = 0.15 + rng() * 0.45;
+    c.save();
+    c.globalAlpha = pa * 0.4;
+    c.fillStyle = '#ffd700';
+    c.beginPath(); c.arc(px, py, ps * 3, 0, Math.PI*2); c.fill();
+    c.restore();
+    c.save();
+    c.globalAlpha = pa;
+    c.fillStyle = '#ffd700';
+    c.beginPath(); c.arc(px, py, ps, 0, Math.PI*2); c.fill();
+    c.restore();
+  }
+
+  // 水印
+  c.save();
+  c.translate(W/2, H/2);
+  c.rotate(-0.5);
+  c.font = '900 52px Orbitron, sans-serif';
+  c.fillStyle = 'rgba(255,215,0,0.03)';
+  c.textAlign = 'center';
+  c.fillText('HAPPY BIRTHDAY', 0, 0);
+  c.fillText('HAPPY BIRTHDAY', 0, 55);
+  c.restore();
+
+  // 星标
+  c.save();
+  c.textAlign = 'center';
+  c.fillStyle = '#ffd700';
+  c.globalAlpha = 0.3;
+  c.font = '50px serif';
+  c.fillText('\u2726', W/2, 80);
+  c.globalAlpha = 1.0;
+  c.font = '38px serif';
+  c.fillText('\u2726', W/2, 80);
+  c.restore();
+
+  // 标题
+  c.save();
+  c.textAlign = 'center';
+  c.fillStyle = '#ffd700';
+  c.globalAlpha = 0.3;
+  c.font = '900 28px Orbitron, sans-serif';
+  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', W/2, 118);
+  c.globalAlpha = 1.0;
+  c.font = '900 26px Orbitron, sans-serif';
+  c.fillText('\u751F\u65E5\u7EAA\u5FF5\u8BC1\u4E66', W/2, 118);
+  c.restore();
+
+  // 副标题
+  c.save();
+  c.textAlign = 'center';
+  c.font = '500 10px "JetBrains Mono", monospace';
+  c.globalAlpha = 0.85;
+  c.fillStyle = '#b388ff';
+  c.fillText('BIRTHDAY COMMEMORATION', W/2, 138);
+  c.restore();
+
+  // 分隔线
+  var div1 = c.createLinearGradient(W*0.12, 0, W*0.88, 0);
+  div1.addColorStop(0, 'transparent');
+  div1.addColorStop(0.5, 'rgba(255,215,0,0.5)');
+  div1.addColorStop(1, 'transparent');
+  c.strokeStyle = div1; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(W*0.12, 168); c.lineTo(W*0.88, 168); c.stroke();
+  c.save();
+  c.textAlign = 'center';
+  c.fillStyle = '#ffd700';
+  c.globalAlpha = 0.8;
+  c.font = '14px serif';
+  c.fillText('\u2727', W/2, 173);
+  c.restore();
+
+  // 兹证明
+  c.save();
+  c.textAlign = 'center';
+  c.font = '500 17px "Rajdhani", sans-serif';
+  c.globalAlpha = 0.8;
+  c.fillStyle = '#ffffff';
+  c.fillText('\u5179\u8BC1\u660E', W/2, 210);
+  c.restore();
+
+  // 名字
+  c.save();
+  c.textAlign = 'center';
+  c.fillStyle = '#ffd700';
+  c.globalAlpha = 0.3;
+  c.font = '900 38px Orbitron, sans-serif';
+  c.fillText('\u5F20\u6167\u8273', W/2, 255);
+  c.globalAlpha = 1.0;
+  c.font = '900 36px Orbitron, sans-serif';
+  c.fillText('\u5F20\u6167\u8273', W/2, 255);
+  c.restore();
+
+  // 日期
+  c.save();
+  c.textAlign = 'center';
+  c.fillStyle = '#ffd700';
+  c.globalAlpha = 0.2;
+  c.font = '700 17px "Rajdhani", sans-serif';
+  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', W/2, 292);
+  c.globalAlpha = 1.0;
+  c.font = '700 15px "Rajdhani", sans-serif';
+  c.fillText('\u4E8E 2026\u5E748\u670810\u65E5 \u8FCE\u6765 19 \u5C81\u751F\u65E5', W/2, 292);
+  c.restore();
+
+  // 分隔线2
+  c.save();
+  c.strokeStyle = div1; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(W*0.12, 314); c.lineTo(W*0.88, 314); c.stroke();
+  c.textAlign = 'center';
+  c.fillStyle = 'rgba(255,107,157,0.6)';
+  c.globalAlpha = 0.6;
+  c.font = '14px serif';
+  c.fillText('\u2661', W/2, 319);
+  c.restore();
+
+  // 愿望
+  c.save();
+  c.textAlign = 'center';
+  var wish = (typeof ritualWishText !== 'undefined' && ritualWishText) ? ritualWishText : '\u613F\u524D\u7A0B\u4F3C\u9526\uFF0C\u4E07\u4E8B\u987A\u9042';
+  c.font = 'italic 14px "Rajdhani", sans-serif';
+  c.globalAlpha = 1.0;
+  c.fillStyle = '#b388ff';
+  var chars = ('"' + wish + '"').split('');
+  var line = '', yy = 350, maxW = W - 90, lh = 24;
+  for (var ci2 = 0; ci2 < chars.length; ci2++) {
+    var test = line + chars[ci2];
+    if (c.measureText(test).width > maxW && line) {
+      c.fillText(line, W/2, yy);
+      line = chars[ci2];
+      yy += lh;
+    } else { line = test; }
+  }
+  c.fillText(line, W/2, yy);
+  c.restore();
+
+  // 签名区分隔线
+  c.strokeStyle = 'rgba(255,215,0,0.18)'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(50, 680); c.lineTo(W-50, 680); c.stroke();
+
+  // 签名
+  c.save();
+  c.textAlign = 'left';
+  c.fillStyle = 'rgba(255,255,255,0.4)';
+  c.font = '500 10px "JetBrains Mono", monospace';
+  c.fillText('WITNESS SIGNATURE', 60, 710);
+  c.font = '400 11px sans-serif';
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fillText('\u89C1\u8BC1\u7B7E\u540D', 60, 726);
+  c.restore();
+  var signCanvas = document.getElementById('signPad');
+  if (signCanvas) {
+    c.save();
+    c.drawImage(signCanvas, 60, 735, 200, 70);
+    c.restore();
+  }
+
+  // 印章
+  c.save();
+  c.translate(W - 90, 745);
+  c.rotate(-0.2);
+  var sealBg = c.createRadialGradient(0, 0, 0, 0, 0, 32);
+  sealBg.addColorStop(0, 'rgba(255,107,157,0.18)');
+  sealBg.addColorStop(1, 'rgba(255,107,157,0.05)');
+  c.fillStyle = sealBg;
+  c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.fill();
+  c.strokeStyle = 'rgba(255,107,157,0.35)';
+  c.lineWidth = 1;
+  c.setLineDash([3, 3]);
+  c.beginPath(); c.arc(0, 0, 40, 0, Math.PI*2); c.stroke();
+  c.setLineDash([]);
+  c.strokeStyle = 'rgba(255,107,157,0.85)';
+  c.lineWidth = 2.5;
+  c.beginPath(); c.arc(0, 0, 32, 0, Math.PI*2); c.stroke();
+  c.fillStyle = '#ff6b9d';
+  c.textAlign = 'center';
+  c.font = '900 14px sans-serif';
+  c.fillText('19', 0, -2);
+  c.font = '600 11px sans-serif';
+  c.fillText('\u751F\u65E5', 0, 16);
+  c.restore();
+
+  // 序列号
+  c.save();
+  c.textAlign = 'center';
+  var serialEl = document.getElementById('certSerial');
+  c.fillStyle = 'rgba(255,255,255,0.25)';
+  c.font = '400 8px monospace';
+  c.fillText(serialEl ? serialEl.textContent : '', W/2, 840);
+  c.restore();
+
+  // 输出
+  var dataURL = cv.toDataURL('image/png', 1.0);
+  var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  if (isWeChat) {
+    showSaveOverlay(dataURL);
+  } else {
+    cv.toBlob(function(blob) {
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.download = 'birthday_certificate_zhanghuiyan.png';
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }, 'image/png');
+  }
+  playDecryptSuccess();
 }
 
 // 长按保存浮层（微信环境）
