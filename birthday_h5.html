@@ -2881,27 +2881,23 @@ function initLevel3() {
   if (level3Initialized) return;
   level3Initialized = true;
 
-  // 确保音乐播放不被图片加载中断
-  const audio = document.getElementById('bgMusic');
-  if (audio && !audio.paused) {
-    // 记住当前播放位置，图片加载后恢复
-    const savedTime = audio.currentTime;
-    const savedPlaying = !audio.paused;
-    const resumeAfterLoad = () => {
-      if (savedPlaying && audio.paused) {
-        audio.currentTime = savedTime;
-        audio.play().catch(() => {});
-      }
-    };
-    window.addEventListener('load', resumeAfterLoad, { once: true });
-    // 兜底：3秒后也检查一次
-    setTimeout(resumeAfterLoad, 3000);
-  }
-
   const photoSrcs = [
     'assets/photo_1.jpg', 'assets/photo_2.jpg', 'assets/photo_3.jpg',
     'assets/photo_4.jpg'
   ];
+
+  // 音乐守护：进入碎片回忆时，若音乐处于开启状态，持续守护避免图片加载/解码被系统暂停
+  const audio = document.getElementById('bgMusic');
+  let musicGuardInterval = null;
+  if (audio && GameState.musicEnabled) {
+    musicGuardInterval = setInterval(() => {
+      if (audio.paused) audio.play().catch(() => {});
+    }, 300);
+    // 最多守护 10 秒，全部加载完后会提前清除
+    setTimeout(() => {
+      if (musicGuardInterval) { clearInterval(musicGuardInterval); musicGuardInterval = null; }
+    }, 10000);
+  }
 
   // ===== 拍立得照片墙：每张照片只出现一次，错落倾斜排布 =====
   const wall = document.getElementById('polaroidWall');
@@ -2979,12 +2975,26 @@ function initLevel3() {
 
   // ===== 照片立即加载 =====
   const lazyImgs = wall.querySelectorAll('img[data-src]');
+  let loadedCount = 0;
+  const finishImageLoad = () => {
+    loadedCount++;
+    // 每张图加载后都尝试恢复音乐（兼容部分浏览器自动暂停）
+    if (audio && GameState.musicEnabled && audio.paused) {
+      audio.play().catch(() => {});
+    }
+    if (loadedCount >= lazyImgs.length && musicGuardInterval) {
+      clearInterval(musicGuardInterval);
+      musicGuardInterval = null;
+    }
+  };
   lazyImgs.forEach(function(img) {
     img.src = img.dataset.src;
     img.removeAttribute('data-src');
     img.addEventListener('load', function() {
       img.parentElement.classList.remove('polaroid-skeleton');
+      finishImageLoad();
     }, { once: true });
+    img.addEventListener('error', finishImageLoad, { once: true });
   });
 
   // ===== 记忆星图：SVG星座节点 + 连线 =====
@@ -4586,6 +4596,12 @@ window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', onFirstInteract);
   document.addEventListener('touchstart', onFirstInteract);
   document.addEventListener('keydown', onFirstInteract);
+
+  // 预加载 level 3 照片，进入碎片回忆时更快显示并减少加载对音乐的冲击
+  ['assets/photo_1.jpg','assets/photo_2.jpg','assets/photo_3.jpg','assets/photo_4.jpg'].forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
 });
 
 // Handle resize for character repositioning
