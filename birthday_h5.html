@@ -1914,7 +1914,7 @@ body::before{
 <canvas class="petal-canvas" id="petalCanvas"></canvas>
 
 <!-- 背景音乐 -->
-<audio id="bgMusic" src="assets/小幸运.mp3" loop preload="auto" autoplay></audio>
+<audio id="bgMusic" src="https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/bgm.mp3" loop preload="auto" autoplay></audio>
 
 <!-- Music toggle button -->
 <button class="music-btn" id="musicBtn" title="Music">♪</button>
@@ -2882,8 +2882,10 @@ function initLevel3() {
   level3Initialized = true;
 
   const photoSrcs = [
-    'assets/photo_1.jpg', 'assets/photo_2.jpg', 'assets/photo_3.jpg',
-    'assets/photo_4.jpg'
+    'https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_1.jpg',
+    'https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_2.jpg',
+    'https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_3.jpg',
+    'https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_4.jpg'
   ];
 
   // 音乐守护：进入碎片回忆时，若音乐处于开启状态，持续守护避免图片加载/解码被系统暂停
@@ -4597,8 +4599,8 @@ window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('touchstart', onFirstInteract);
   document.addEventListener('keydown', onFirstInteract);
 
-  // 预加载 level 3 照片，进入碎片回忆时更快显示并减少加载对音乐的冲击
-  ['assets/photo_1.jpg','assets/photo_2.jpg','assets/photo_3.jpg','assets/photo_4.jpg'].forEach(src => {
+  // 预加载 level 3 照片（走 jsDelivr 国内加速），进入碎片回忆时更快显示并减少加载对音乐的冲击
+  ['https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_1.jpg','https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_2.jpg','https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_3.jpg','https://cdn.jsdelivr.net/gh/zyc-01-001/birthday-h5@main/assets/photo_4.jpg'].forEach(src => {
     const img = new Image();
     img.src = src;
   });
